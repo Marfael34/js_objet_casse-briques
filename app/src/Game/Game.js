@@ -1,6 +1,7 @@
 import '../assets/css/style.css';
 // import des assets de sprite
 import ballImgsrc from '../assets/img/ball.png';
+import CustomMath from './CustomMath';
 
 class Game
 {
@@ -11,13 +12,12 @@ class Game
     //temporaire: position de base de la balle
     ballX = 400;
     ballY = 300;
-    ballSpeed = 5
+    ballSpeed = 10;
+    ballAngle = 30;
     ballVelocity = {
-            x: this.ballSpeed * Math.cos(Math.PI /6), // trajectoire de la balle avec 30° d'angle (Pi/6)
-            y: this.ballSpeed * -1 * Math.sin(Math.PI /6)
+            x: this.ballSpeed * Math.cos(CustomMath.degToRad(this.ballAngle)), // trajectoire de la balle avec 30° d'angle (Pi/6)
+            y: this.ballSpeed * -1 * Math.sin(CustomMath.degToRad(this.ballAngle)) // -1 pour inverser le repères y (en math, il est dans l'autre sens)
         }
-
-
 
     start(){
         console.log('Jeu démarrer ...');
