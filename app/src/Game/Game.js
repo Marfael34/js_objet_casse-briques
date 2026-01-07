@@ -7,22 +7,14 @@ class Game
     // contexte de dessin du canvas
     ctx;
 
+    //temporaire: position de base de la balle
+    ballX = 400;
+    ballY = 300;
+
     start(){
         console.log('Jeu démarrer ...');
         this.initHTMLUI();
-
-        // tomporaire: dessin de la balle a partir d'une image 
-        // 1- on créer une balise HTML <img> qui ne sera jamais ajoutée au DOM
-        const ballImg = new Image();
-
-        // 2- on récupère le nom de l'image généré par webpack en tant que src de cette image
-        ballImg.src = ballImgsrc; 
-
-        // 3- on demande au context de dessin de dessiner cette image dans le canvas
-        ballImg.addEventListener('load', ()=>{
-            this.ctx.drawImage(ballImg, 400, 300, 40, 40);
-        });
-        
+        requestAnimationFrame(this.loop.bind(this));
         
     }
 
@@ -39,6 +31,28 @@ class Game
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
+    }
+
+    // boucle d'animation
+    loop(){
+        // tomporaire: dessin de la balle a partir d'une image 
+        // 1- on créer une balise HTML <img> qui ne sera jamais ajoutée au DOM
+        const ballImg = new Image();
+
+        // 2- on récupère le nom de l'image généré par webpack en tant que src de cette image
+        ballImg.src = ballImgsrc; 
+
+        // 3- on demande au context de dessin de dessiner cette image dans le canvas
+        ballImg.addEventListener('load', ()=>{
+            this.ctx.drawImage(ballImg, this.ballX, this.ballY);
+
+        });
+        // mise a jour de la position de la balle 
+        this.ballX ++;
+        this.ballY --;
+
+        // Appel de la frame suivante
+        requestAnimationFrame(this.loop.bind(this));
     }
 
     // focntion de test inutile dans le jeux 
