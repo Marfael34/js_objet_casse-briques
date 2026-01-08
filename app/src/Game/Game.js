@@ -3,8 +3,9 @@ import '../assets/css/style.css';
 import ballImgsrc from '../assets/img/ball.png';
 import paddleImgsrc from '../assets/img/paddle.png';
 import brickImgsrc from '../assets/img/brick.png';
-import CustomMath from './CustomMath';
+import edgeImgsrc from '../assets/img/edge.png';
 import Ball from './Ball';
+import GameObject from './GameObject';
 
 class Game
 {
@@ -14,12 +15,17 @@ class Game
     images = {
         ball: null,
         paddle: null,
-        brick: null
+        brick: null,
+        edge: null
     }
     // State (un objet qui décrit l'état actuel du jeu, les balles, les briques encore présentes, ect.)
     state = {
         // Balles (plusieurs car possible multiball)
         balls: [],
+        // bordure de la mort 
+        deathEdge: null,
+        // Bordure a rebon
+        bouncingEdge: [],
         // Paddle
         paddle: null
     };
@@ -68,13 +74,18 @@ class Game
         const imgBrick = new Image();
         imgBrick.src = brickImgsrc;
         this.images.brick = imgBrick;
+
+        // Edge
+        const imgEdge = new Image();
+        imgEdge.src = edgeImgsrc;
+        this.images.edge = imgEdge;
     }
 
     //Mise en place des objet du jeux sur la scène
     initGameObject(){
         // Balle 
         console.log(this.images)
-        const ball = new Ball(this.images.ball, 20, 20, 45, 80);
+        const ball = new Ball(this.images.ball, 20, 20, 45, 2);
         ball.setPosition(400, 300);
         this.state.balls.push(ball);
         // Dessin des balles 
@@ -82,16 +93,39 @@ class Game
             theBall.draw();
         });
 
+        // Bordure de la mort 
+        const deathEdge = new GameObject(this.images.edge, 800, 20);
+        deathEdge.setPosition(0, 630);
+        this.state.deathEdge = deathEdge;
+        // TODO on le dessine ou pas ?
+
+        // Bordure a rebond
+        const edgeTop = new GameObject(this.images.edge, 800, 20);
+        edgeTop.setPosition(0, 0);
+        const edgeRight = new GameObject(this.images.edge, 20, 610);
+        edgeRight.setPosition(780, 20);
+        const edgeLeft = new GameObject(this.images.edge, 20, 610);
+        edgeLeft.setPosition(0 , 20)
+        this.state.bouncingEdge.push(edgeTop, edgeRight, edgeLeft);
+
+        // dessin des bordure à rebond
+        this.state.bouncingEdge.forEach(theEdge => {
+            theEdge.draw()
+        });
+        
+
     }
 
-
     // boucle d'animation
-    loop(){ 
-        
-        
-
+    loop(){    
         // on efface tout le canvas
         this.ctx.clearRect(0,0, 800, 600);
+
+        // dessin des bordure à rebond
+        this.state.bouncingEdge.forEach(theEdge => {
+            theEdge.draw()
+        });
+
         // Dessin des objets 
         this.state.balls.forEach(theBall => {
             theBall.update();
