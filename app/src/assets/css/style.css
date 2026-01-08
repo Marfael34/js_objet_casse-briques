@@ -1,8 +1,15 @@
 body{
     background-color: #7b7979;
     color: white;
+    display: grid;
+    place-items: center;
+
 }
 
 canvas{
     background-color: #00c;
+}
+
+h1{
+    text-align: center;
 }

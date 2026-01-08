@@ -13,7 +13,7 @@ class Game
     ballX = 400;
     ballY = 300;
     ballSpeed = 10;
-    ballAngle = 30;
+    ballAngle = 20;
     ballVelocity = {
             x: this.ballSpeed * Math.cos(CustomMath.degToRad(this.ballAngle)), // trajectoire de la balle avec 30° d'angle (Pi/6)
             y: this.ballSpeed * -1 * Math.sin(CustomMath.degToRad(this.ballAngle)) // -1 pour inverser le repères y (en math, il est dans l'autre sens)
