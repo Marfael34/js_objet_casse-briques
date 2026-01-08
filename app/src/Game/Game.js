@@ -1,28 +1,36 @@
 import '../assets/css/style.css';
 // import des assets de sprite
 import ballImgsrc from '../assets/img/ball.png';
+import paddleImgsrc from '../assets/img/paddle.png';
+import brickImgsrc from '../assets/img/brick.png';
 import CustomMath from './CustomMath';
+import Ball from './Ball';
 
 class Game
 {
     // contexte de dessin du canvas
     ctx;
-    ballImg;
+    // Image
+    images = {
+        ball: null,
+        paddle: null,
+        brick: null
+    }
+    // State (un objet qui décrit l'état actuel du jeu, les balles, les briques encore présentes, ect.)
+    state = {
+        // Balles (plusieurs car possible multiball)
+        balls: [],
+        // Paddle
+        paddle: null
+    };
 
-    //temporaire: position de base de la balle
-    ballX = 400;
-    ballY = 300;
-    ballSpeed = 10;
-    ballAngle = 20;
-    ballVelocity = {
-            x: this.ballSpeed * Math.cos(CustomMath.degToRad(this.ballAngle)), // trajectoire de la balle avec 30° d'angle (Pi/6)
-            y: this.ballSpeed * -1 * Math.sin(CustomMath.degToRad(this.ballAngle)) // -1 pour inverser le repères y (en math, il est dans l'autre sens)
-        }
 
     start(){
         console.log('Jeu démarrer ...');
         // initialisation de l'interface HTML
         this.initHTMLUI();
+         // initialisation des images
+        this.initImages();
         // initialisation des objet du jeux
         this.initGameObject();
         // lancement de la boucle
@@ -45,42 +53,60 @@ class Game
         this.ctx = elCanvas.getContext("2d");
     }
 
+    initImages(){
+        //Balle
+        const imgBall = new Image();
+        imgBall.src = ballImgsrc;
+        this.images.ball = imgBall;
+
+        // Paddle
+        const imgPaddle = new Image();
+        imgPaddle.src = paddleImgsrc;
+        this.images.paddle = imgPaddle;
+
+        // Brique
+        const imgBrick = new Image();
+        imgBrick.src = brickImgsrc;
+        this.images.brick = imgBrick;
+    }
+
     //Mise en place des objet du jeux sur la scène
     initGameObject(){
-         // 1- on créer une balise HTML <img> qui ne sera jamais ajoutée au DOM
-        this.ballImg = new Image();
-
-        // 2- on récupère le nom de l'image généré par webpack en tant que src de cette image
-        this.ballImg.src = ballImgsrc; 
-
-        // 3- on demande au context de dessin de dessiner cette image dans le canvas
-        this.ctx.drawImage(this.ballImg, this.ballX, this.ballY);
+        // Balle 
+        console.log(this.images)
+        const ball = new Ball(this.images.ball, 20, 20, 45, 80);
+        ball.setPosition(400, 300);
+        this.state.balls.push(ball);
+        // Dessin des balles 
+        this.state.balls.forEach(theBall => {
+            theBall.draw();
+        });
 
     }
 
 
     // boucle d'animation
     loop(){ 
-       
-        // mise a jour de la position de la balle 
-        this.ballX += this.ballVelocity.x;
-        this.ballY+= this.ballVelocity.y;
         
-        // TODO en mieux Détection des collisions 
-        // collision avec le côté droit ou gauche de la scène: Inversion du X de la velocité
-        if(this.ballX + 20 >= 800 || this.ballX <= 0){
-            this.ballVelocity.x *= -1;
-        }
-        // Collision avec le côté haut ou bas de la scène: Inversion du Y de la velocité 
-        if(this.ballY +20 >= 600 || this.ballY <=0){
-            this.ballVelocity.y *=-1;
-        }
+        
 
-        // -- rendu visuel -- 
         // on efface tout le canvas
         this.ctx.clearRect(0,0, 800, 600);
         // Dessin des objets 
-        this.ctx.drawImage(this.ballImg, this.ballX, this.ballY);
+        this.state.balls.forEach(theBall => {
+            theBall.update();
+            const bounds = theBall.getBounds();
+            // TODO en mieux Détection des collisions 
+            // collision avec le côté droit ou gauche de la scène: Inversion du X de la velocité
+            if(bounds.right >= 800 || bounds.left <= 0){
+                theBall.reverseOrientationX();
+            }
+            // Collision avec le côté haut ou bas de la scène: Inversion du Y de la velocité 
+            if(bounds.bottom >= 600 || bounds.top <=0){
+                theBall.reverseOrientationY();
+            }
+            theBall.draw();
+        });
         // Appel de la frame suivante
         requestAnimationFrame(this.loop.bind(this));
     }

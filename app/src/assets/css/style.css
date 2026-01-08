@@ -1,5 +1,5 @@
 body{
-    background-color: #7b7979;
+    background-color: #494848;
     color: white;
     display: grid;
     place-items: center;
@@ -7,7 +7,7 @@ body{
 }
 
 canvas{
-    background-color: #00c;
+    background-color: #030384;
 }
 
 h1{

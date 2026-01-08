@@ -4,4 +4,9 @@ export default class CustomMath
     static degToRad(degValue){
         return degValue * (Math.PI / 180);
     }
+
+      // conversion d'angle Radian -> degrés
+    static radToDeg(radValue){
+        return radValue * (180 / Math.PI);
+    }
 }

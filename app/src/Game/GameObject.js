@@ -1,5 +1,6 @@
 import Bounds from "./DataType/Bounds";
 import Size from "./DataType/Size";
+import Vector from "./DataType/Vector";
 import theGame from "./Game";
 
 export default class GameObject 
@@ -20,6 +21,10 @@ export default class GameObject
             this.position.y + this.size.height,
             this.position.x
         )
+    }
+
+    setPosition(x, y){
+        this.position = new Vector(x, y);
     }
 
     draw(){
