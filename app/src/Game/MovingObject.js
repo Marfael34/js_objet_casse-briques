@@ -44,8 +44,8 @@ export default class MovingObject extends GameObject
         // Collision Horizontale (bords droite et gauche)
         if(
             (
-                bounds.right >= foreignBounds.left
-                && bounds.right <= foreignBounds.right
+                bounds.right >= foreignBounds.left -1
+                && bounds.right <= foreignBounds.right -1
                 ||
                 bounds.left <= foreignBounds.right
                 && bounds.left >= foreignBounds.left
@@ -59,10 +59,10 @@ export default class MovingObject extends GameObject
         // Collision Verticale (bords haut et bas)
         else if(
             (
-                bounds.top <= foreignBounds.bottom
+                bounds.top <= foreignBounds.bottom +1
                 && bounds.top >= foreignBounds.top
                 ||
-                bounds.bottom >= foreignBounds.top
+                bounds.bottom >= foreignBounds.top+1
                 && bounds.bottom <= foreignBounds.bottom
             )
             && bounds.left >= foreignBounds.left

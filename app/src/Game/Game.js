@@ -96,7 +96,7 @@ class Game
     initGameObject(){
         // Balle 
         console.log(this.images)
-        const ball = new Ball(this.images.ball, 20, 20, 45, 5);
+        const ball = new Ball(this.images.ball, 20, 20, 45, 10);
         ball.setPosition(400, 300);
         this.state.balls.push(ball);
 
@@ -220,6 +220,23 @@ class Game
                         break;
                 }
             });
+
+            // Collision avec le paddle
+            const paddleCollisionType = theBall.getCollisionType(this.state.paddle);
+
+                switch( paddleCollisionType ) {
+
+                    case CollisionType.HORIZONTAL:
+                        theBall.reverseOrientationX();
+                        break;
+
+                    case CollisionType.VERTICAL:
+                        theBall.reverseOrientationY();
+                        break;
+
+                    default:
+                        break;
+                }
 
             theBall.draw();
         });
