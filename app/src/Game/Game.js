@@ -86,7 +86,7 @@ class Game
         imgBrick.src = brickImgsrc;
         this.images.brick = imgBrick;
 
-        // Edge
+        // Bordure
         const imgEdge = new Image();
         imgEdge.src = edgeImgsrc;
         this.images.edge = imgEdge;
