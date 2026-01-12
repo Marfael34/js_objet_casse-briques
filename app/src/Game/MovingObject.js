@@ -19,13 +19,25 @@ export default class MovingObject extends GameObject
 
     }
 
-    reverseOrientationX(){
+    reverseOrientationX(alteration = 0){
+        this.orientation += alteration;
         this.orientation = 180 - this.orientation;
+
+        this.orientation = this.orientation % 360;
+        
+        if(this.orientation >= 0) return;
+
+        this.orientation = CustomMath.normalizeAngle(this.orientation);
     }
 
-    reverseOrientationY(){
-        
+    reverseOrientationY(alteration = 0){
+
+        this.orientation += alteration;
+
         this.orientation *= -1;
+
+        this.orientation = CustomMath.normalizeAngle(this.orientation);
+
     }
 
     update(){
