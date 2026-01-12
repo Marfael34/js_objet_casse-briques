@@ -99,6 +99,7 @@ class Game
         const ball = new Ball(this.images.ball, 20, 20, 45, 10);
         ball.setPosition(400, 300);
         this.state.balls.push(ball);
+        console.log(ball)
 
         // Bordure de la mort 
         const deathEdge = new GameObject(this.images.edge, 800, 20);
@@ -227,7 +228,24 @@ class Game
                 switch( paddleCollisionType ) {
 
                     case CollisionType.HORIZONTAL:
-                        theBall.reverseOrientationX();
+                        // altération de l'angle en fonction du mouvement du paddle
+                        let alteration = 0;
+                        if(this.state.userInput.paddleRight){
+                            alteration = -10;
+                        }
+                        else if(this.state.userInput.paddelLeft){
+                            alteration = +10;
+
+                        }
+                        theBall.reverseOrientationX(alteration);
+
+                        // Correction pour un résultat de 0 et 180 pour éviter
+                        if(theBall.orientation === 0){
+                            theBall.orientation = 10;
+                        }
+                        else if(theBall.orientation === 180){
+                            theBall.orientation = 170
+                        }
                         break;
 
                     case CollisionType.VERTICAL:
