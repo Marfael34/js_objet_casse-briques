@@ -1,4 +1,6 @@
 import '../assets/css/style.css';
+// Import des donner de configuration 
+import customConfig from '../config.json'
 // import des assets de sprite
 import ballImgsrc from '../assets/img/ball.png';
 import paddleImgsrc from '../assets/img/paddle.png';
@@ -61,6 +63,11 @@ class Game
         }
     };
 
+    constructor(customConfig = {}){
+        Object.assign(this.config, customConfig);
+
+    }
+
     start(){
         console.log('Jeu démarrer ...');
         // initialisation de l'interface HTML
@@ -80,8 +87,8 @@ class Game
         elH1.textContent = 'Arkanoïd';
 
         const elCanvas = document.createElement('canvas');
-        elCanvas.width = 800;
-        elCanvas.height = 600;
+        elCanvas.width = this.config.canvasSize.width;
+        elCanvas.height = this.config.canvasSize.height;
 
         document.body.append( elH1, elCanvas);
 
@@ -389,6 +396,6 @@ class Game
     }
 }
 
-const theGame = new Game();
+const theGame = new Game(customConfig);
 
 export default theGame;
