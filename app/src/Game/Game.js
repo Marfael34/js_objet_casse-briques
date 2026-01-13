@@ -1,6 +1,7 @@
 import '../assets/css/style.css';
 // Import des donner de configuration 
-import customConfig from '../config.json'
+import customConfig from '../config.json';
+import levelsConfig from '../levels.json';
 // import des assets de sprite
 import ballImgsrc from '../assets/img/ball.png';
 import paddleImgsrc from '../assets/img/paddle.png';
@@ -10,6 +11,7 @@ import Ball from './Ball';
 import GameObject from './GameObject';
 import CollisionType from './DataType/CollisionType';
 import Paddle from './Paddle';
+import Brick from './Brick';
 
 class Game
 {
@@ -37,6 +39,9 @@ class Game
 
     }
 
+    // Données des niveaux
+    levels;
+
     // Contexte de dessin du canvas
     ctx;
     // Image
@@ -50,7 +55,9 @@ class Game
     state = {
         // Balles (plusieurs car possible multiball)
         balls: [],
-        // bordure de la mort 
+        // Briques
+        bricks: [],
+        // Bordure de la mort 
         deathEdge: null,
         // Bordure a rebon
         bouncingEdge: [],
@@ -63,8 +70,10 @@ class Game
         }
     };
 
-    constructor(customConfig = {}){
+    constructor(customConfig = {}, levelsConfig = [] ){
         Object.assign(this.config, customConfig);
+
+        this.levels = levelsConfig;
 
     }
 
@@ -211,6 +220,35 @@ class Game
         );
         this.state.paddle = paddle;
 
+        // Chargement des brique
+        this.loadBricks(this.levels.data[0]);
+
+    }
+
+    // Création des briques
+    loadBricks(levelArray){
+        for(let line = 0; line < levelArray.length; line ++){
+            for(let column = 0; column < levelArray[line].length; column ++){
+                let brickType = levelArray[line][column];
+                // Si la valeur trouver est 0, c'est un espace vide, donc on passe à la colonne suivante 
+                if(brickType == 0) continue;
+
+                // Si on a bien une birque, on la créer et on la met dans le state
+                const brick = new Brick(
+                    this.images.brick, 
+                    50, 
+                    25,
+                    brickType
+                );
+                brick.setPosition(
+                    20 + (50 * column), 
+                    20 + (25 * line)
+                );
+
+                this.state.bricks.push(brick)
+
+            }
+        } console.log(this.state)
     }
 
     // Boucle d'animation
@@ -225,6 +263,11 @@ class Game
         // Dessin des bordure à rebond
         this.state.bouncingEdge.forEach(theEdge => {
             theEdge.draw()
+        });
+
+        // Dessin des briques
+        this.state.bricks.forEach(theBrick =>{
+            theBrick.draw();
         });
 
         // Cycle du paddle
@@ -348,7 +391,10 @@ class Game
                 }
 
             theBall.draw();
+           
         });
+
+       
 
         // Mise a jour du state.balls avec saveBalls
         this.state.balls = saveBalls;
@@ -396,6 +442,6 @@ class Game
     }
 }
 
-const theGame = new Game(customConfig);
+const theGame = new Game(customConfig, levelsConfig);
 
 export default theGame;
