@@ -251,27 +251,9 @@ class Game
         } console.log(this.state)
     }
 
-    // Boucle d'animation
-    loop(){    
-        // On efface tout le canvas
-        this.ctx.clearRect(
-            0,
-            0, 
-            this.config.canvasSize.width, 
-            this.config.canvasSize.height);
-
-        // Dessin des bordure à rebond
-        this.state.bouncingEdge.forEach(theEdge => {
-            theEdge.draw()
-        });
-
-        // Dessin des briques
-        this.state.bricks.forEach(theBrick =>{
-            theBrick.draw();
-        });
-
-        // Cycle du paddle
-        // On analyse quel commande de mouvement est demandée pour le paddle
+    // Cycle de vie: 1 - Enntrées Utilisateur
+    checkUserInput(){
+         // On analyse quel commande de mouvement est demandée pour le paddle
         // Droite
         if( this.state.userInput.paddleRight ){
             this.state.paddle.orientation = 0;
@@ -289,8 +271,11 @@ class Game
 
         // Mise a jour de la position
         this.state.paddle.update();
+    }
 
-        // Collision du paddle avec les bords
+    // Cycle de vie: 2 - Collisions et calcules qui en découlent
+    checkCollisions(){
+                // Collision du paddle avec les bords
         this.state.bouncingEdge.forEach( theEdge => {
             const collisionType = this.state.paddle.getCollisionType(theEdge);
 
@@ -315,16 +300,14 @@ class Game
 
             // on remet a jour le paddle
             this.state.paddle.update();
-        })
-        
-        // Dessin du paddle
-        this.state.paddle.draw();
+        });
 
-        // Cycle des balle
+        // Collision des balles avec tout les objets
         // on créer un tableau pour stocker les balles non perdues
         const saveBalls = []; 
+
         this.state.balls.forEach(theBall => {
-            theBall.update();
+            
 
             // Collision de la balle avec le bord de la mort
             if( theBall.getCollisionType(this.state.deathEdge) !== CollisionType.NONE){
@@ -389,21 +372,73 @@ class Game
                     default:
                         break;
                 }
-
-            theBall.draw();
-           
         });
-
-       
 
         // Mise a jour du state.balls avec saveBalls
         this.state.balls = saveBalls;
+        
         //S'il n'y a aucune balle dans saveBalls, on a perdu
         if(saveBalls.length <= 0){
             console.log("Aie c'est foutu !!");
             // on sort de loop()
             return;
         }
+    }
+
+    // Cycle de vie: 3 - Mise a jours des données des GameObject
+    updateObjects(){
+        // Balles 
+        this.state.balls.forEach( theBall => {
+            theBall.update();
+        })
+    }
+
+    // Cycle de vie: 4 - Rendu graphique des GameObjects
+    renderObject(){
+
+        // On efface tout le canvas
+        this.ctx.clearRect(
+            0,
+            0, 
+            this.config.canvasSize.width, 
+            this.config.canvasSize.height
+        );
+
+        // Dessin des bordure à rebond
+        this.state.bouncingEdge.forEach(theEdge => {
+            theEdge.draw();
+        });
+
+        // Dessin des briques
+        this.state.bricks.forEach(theBrick =>{
+            theBrick.draw();
+        });
+
+        // Dessin du paddle
+        this.state.paddle.draw();
+
+        // Dessin des balles
+        this.state.balls.forEach(theBall => {
+            theBall.draw();
+        })
+
+
+    }
+
+    // Boucle d'animation
+    loop(){ 
+        
+        // Cycle 1
+        this.checkUserInput();
+
+        // Cylce 2
+        this.checkCollisions();
+
+        // cycle 3
+        this.updateObjects();
+
+        // Cycle 4
+        this.renderObject();
 
         // Appel de la frame suivante
         requestAnimationFrame(this.loop.bind(this));
