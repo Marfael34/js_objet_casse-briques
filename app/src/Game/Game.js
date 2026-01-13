@@ -11,7 +11,31 @@ import Paddle from './Paddle';
 
 class Game
 {
-    // contexte de dessin du canvas
+
+    // Config
+    config = {
+        canvasSize: {
+            width: 800,
+            height: 600
+        },
+        ball:{
+            radius: 10,
+            orientation: 45, 
+            speed: 10,
+            position: {
+                x: 400,
+                y: 300
+            },
+            angleAlteration:30
+        },
+        paddleSize: {
+            width: 100,
+            height: 20
+        }
+
+    }
+
+    // Contexte de dessin du canvas
     ctx;
     // Image
     images = {
@@ -37,7 +61,6 @@ class Game
         }
     };
 
-
     start(){
         console.log('Jeu démarrer ...');
         // initialisation de l'interface HTML
@@ -51,7 +74,7 @@ class Game
         
     }
 
-    // méthode "privées"
+    // Méthode "privées"
     initHTMLUI(){
         const elH1 = document.createElement('h1');
         elH1.textContent = 'Arkanoïd';
@@ -95,47 +118,109 @@ class Game
     //Mise en place des objet du jeux sur la scène
     initGameObject(){
         // Balle 
+        const ballDiamater = this.config.ball.radius * 2
         console.log(this.images)
-        const ball = new Ball(this.images.ball, 20, 20, 45, 10);
-        ball.setPosition(400, 300);
+        const ball = new Ball(
+            this.images.ball,
+            ballDiamater, ballDiamater, 
+            this.config.ball.orientation, 
+            this.config.ball.speed
+        );
+
+        ball.setPosition(
+            this.config.ball.position.x, 
+            this.config.ball.position.y
+        );
+
         this.state.balls.push(ball);
         console.log(ball)
 
         // Bordure de la mort 
-        const deathEdge = new GameObject(this.images.edge, 800, 20);
-        deathEdge.setPosition( 0, 630 );
+        const deathEdge = new GameObject(
+            this.images.edge, 
+            this.config.canvasSize.width, 
+            20
+        );
+        deathEdge.setPosition( 
+            0, 
+            this.config.canvasSize.height + 30 
+        );
         this.state.deathEdge = deathEdge;
         // TODO on le dessine ou pas ?
 
-        // Bordure a rebond
-        const edgeTop = new GameObject(this.images.edge, 800, 20);
-        edgeTop.setPosition(0, 0);
-        const edgeRight = new GameObject(this.images.edge, 20, 610);
-        edgeRight.setPosition(780, 20);
+        // -- Bordure a rebond
+        // Haut
+        const edgeTop = new GameObject(
+            this.images.edge, 
+            this.config.canvasSize.width, 
+            20
+        );
+        edgeTop.setPosition(
+            0, 
+            0
+        );
+        // Droite
+        const edgeRight = new GameObject(
+            this.images.edge, 
+            20, 
+            this.config.canvasSize.height + 10
+        );
+        edgeRight.setPosition(
+            this.config.canvasSize.width - 20, 
+            20
+        );
         edgeRight.tag = "RightEdge";
-        const edgeLeft = new GameObject(this.images.edge, 20, 610);
-        edgeLeft.setPosition(0 , 20)
+        
+        // Gauche
+        const edgeLeft = new GameObject(
+            this.images.edge, 
+            20, 
+            this.config.canvasSize.height + 10
+        );
+        edgeLeft.setPosition(
+            0, 
+            20
+        );
         edgeLeft.tag = "LeftEdge";
-        this.state.bouncingEdge.push(edgeTop, edgeRight, edgeLeft);
 
-        //paddle
-        const paddle = new Paddle(this.images.paddle, 100, 20, 0, 0);
-        paddle.setPosition(350, 560);
+        // Ajout dans la liste des bords
+        this.state.bouncingEdge.push(
+            edgeTop, 
+            edgeRight, 
+            edgeLeft
+        );
+
+        //Paddle
+        const paddle = new Paddle(
+            this.images.paddle, 
+            this.config.paddleSize.width, 
+            this.config.paddleSize.height, 
+            0, 
+            0
+        );
+        paddle.setPosition(
+           (this.config.canvasSize.width / 2) - (this.config.paddleSize.width /2), 
+            this.config.canvasSize.height - this.config.paddleSize.height - 20
+        );
         this.state.paddle = paddle;
 
     }
 
-    // boucle d'animation
+    // Boucle d'animation
     loop(){    
-        // on efface tout le canvas
-        this.ctx.clearRect(0,0, 800, 600);
+        // On efface tout le canvas
+        this.ctx.clearRect(
+            0,
+            0, 
+            this.config.canvasSize.width, 
+            this.config.canvasSize.height);
 
-        // dessin des bordure à rebond
+        // Dessin des bordure à rebond
         this.state.bouncingEdge.forEach(theEdge => {
             theEdge.draw()
         });
 
-        // cycle du paddle
+        // Cycle du paddle
         // On analyse quel commande de mouvement est demandée pour le paddle
         // Droite
         if( this.state.userInput.paddleRight ){
@@ -147,7 +232,7 @@ class Game
             this.state.paddle.orientation = 180;
             this.state.paddle.speed = 7;
         }
-        // ni droite ni gauche
+        // Ni droite ni gauche
         if(! this.state.userInput.paddleRight && ! this.state.userInput.paddelLeft){
             this.state.paddle.speed = 0;
         }
@@ -155,7 +240,7 @@ class Game
         // Mise a jour de la position
         this.state.paddle.update();
 
-        // collision du paddle avec les bords
+        // Collision du paddle avec les bords
         this.state.bouncingEdge.forEach( theEdge => {
             const collisionType = this.state.paddle.getCollisionType(theEdge);
 
@@ -185,23 +270,23 @@ class Game
         // Dessin du paddle
         this.state.paddle.draw();
 
-        // cycle des balle
+        // Cycle des balle
         // on créer un tableau pour stocker les balles non perdues
         const saveBalls = []; 
         this.state.balls.forEach(theBall => {
             theBall.update();
 
-            // collision de la balle avec le bord de la mort
+            // Collision de la balle avec le bord de la mort
             if( theBall.getCollisionType(this.state.deathEdge) !== CollisionType.NONE){
-                // on enlève la balle du state
+                // On enlève la balle du state
                 return;
             }
 
-            // on sauvegarde la balle en cours (car si on est la, c'est qu'on a pas tapé le borde de la mort)
+            // On sauvegarde la balle en cours (car si on est la, c'est qu'on a pas tapé le borde de la mort)
             saveBalls.push(theBall);
 
 
-            // collision de la balle avec les bords rebondisant
+            // Collision de la balle avec les bords rebondisant
              this.state.bouncingEdge.forEach( theEdge => {
                 const collisionType = theBall.getCollisionType( theEdge );
 
@@ -228,28 +313,27 @@ class Game
                 switch( paddleCollisionType ) {
 
                     case CollisionType.HORIZONTAL:
-                        // altération de l'angle en fonction du mouvement du paddle
+                        // Altération de l'angle en fonction du mouvement du paddle
+                        theBall.reverseOrientationX();                       
+                        break;
+
+                    case CollisionType.VERTICAL:
                         let alteration = 0;
                         if(this.state.userInput.paddleRight){
-                            alteration = -10;
+                            alteration = -1 * this.config.ball.angleAlteration;
                         }
                         else if(this.state.userInput.paddelLeft){
-                            alteration = +10;
-
+                            alteration = this.config.ball.angleAlteration;
                         }
-                        theBall.reverseOrientationX(alteration);
+                        theBall.reverseOrientationY(alteration);
 
-                        // Correction pour un résultat de 0 et 180 pour éviter
+                         // Correction pour un résultat de 0 et 180 pour éviter
                         if(theBall.orientation === 0){
                             theBall.orientation = 10;
                         }
                         else if(theBall.orientation === 180){
                             theBall.orientation = 170
                         }
-                        break;
-
-                    case CollisionType.VERTICAL:
-                        theBall.reverseOrientationY();
                         break;
 
                     default:
@@ -261,12 +345,12 @@ class Game
 
         // Mise a jour du state.balls avec saveBalls
         this.state.balls = saveBalls;
-        /* S'il n'y a aucune balle dans saveBalls, on a perdu
+        //S'il n'y a aucune balle dans saveBalls, on a perdu
         if(saveBalls.length <= 0){
             console.log("Aie c'est foutu !!");
             // on sort de loop()
             return;
-        }*/
+        }
 
         // Appel de la frame suivante
         requestAnimationFrame(this.loop.bind(this));
@@ -274,7 +358,7 @@ class Game
 
     // focntion de test inutile dans le jeux 
     drawtest(){
-        this.ctx.fillStyle = '#fc0';
+        this.ctx.fillStyle = 'rgb(18, 165, 72)';
         this.ctx.arc(400, 300, 100, Math.PI/6, -Math.PI / 6);
         this.ctx.closePath();
         this.ctx.fill();
