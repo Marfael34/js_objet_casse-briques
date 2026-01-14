@@ -275,34 +275,8 @@ class Game
 
     // Cycle de vie: 2 - Collisions et calcules qui en découlent
     checkCollisions(){
-                // Collision du paddle avec les bords
-        this.state.bouncingEdge.forEach( theEdge => {
-            const collisionType = this.state.paddle.getCollisionType(theEdge);
 
-            // si aucune collision ou autre collision
-            if(collisionType !== CollisionType.HORIZONTAL) return;
-
-            // si la collision est horizontale, on arrête la vitesse du paddle
-            this.state.paddle.speed = 0;
-
-            // on récupère les limite de  theEdge
-            const edgeBounds = theEdge.getBounds();
-
-
-            // si on a touché la bordure de droite
-            if(theEdge.tag === "RightEdge"){
-                this.state.paddle.position.x =  edgeBounds.left - 1 - this.state.paddle.size.width;
-            }
-            // si on a touché la bordure de gauche
-            if(theEdge.tag === "LeftEdge"){
-                this.state.paddle.position.x =  edgeBounds.right + 1;
-            }
-
-            // on remet a jour le paddle
-            this.state.paddle.update();
-        });
-
-        // Collision des balles avec tout les objets
+         // Collision des balles avec tout les objets
         // on créer un tableau pour stocker les balles non perdues
         const saveBalls = []; 
 
@@ -340,6 +314,32 @@ class Game
                 }
             });
 
+            // Collision de la balle avec les briques
+            this.state.bricks.forEach(theBrick => {
+                const collisionType = theBall.getCollisionType( theBrick );
+
+                switch( collisionType ) {
+                    case CollisionType.NONE:
+                        return;
+
+                    case CollisionType.HORIZONTAL:
+                        theBall.reverseOrientationX();
+                        break;
+
+                    case CollisionType.VERTICAL:
+                        theBall.reverseOrientationY();
+                        break;
+
+                    default:
+                        break;
+                }
+
+            // ici on a forcément une collision (car la première clause du switch fait un return)
+            //  Décrement compteur de resistance de la brique
+            theBrick.strength --;
+            }); 
+        
+
             // Collision avec le paddle
             const paddleCollisionType = theBall.getCollisionType(this.state.paddle);
 
@@ -376,13 +376,33 @@ class Game
 
         // Mise a jour du state.balls avec saveBalls
         this.state.balls = saveBalls;
-        
-        //S'il n'y a aucune balle dans saveBalls, on a perdu
-        if(saveBalls.length <= 0){
-            console.log("Aie c'est foutu !!");
-            // on sort de loop()
-            return;
-        }
+
+                // Collision du paddle avec les bords
+        this.state.bouncingEdge.forEach( theEdge => {
+            const collisionType = this.state.paddle.getCollisionType(theEdge);
+
+            // si aucune collision ou autre collision
+            if(collisionType !== CollisionType.HORIZONTAL) return;
+
+            // si la collision est horizontale, on arrête la vitesse du paddle
+            this.state.paddle.speed = 0;
+
+            // on récupère les limite de  theEdge
+            const edgeBounds = theEdge.getBounds();
+
+
+            // si on a touché la bordure de droite
+            if(theEdge.tag === "RightEdge"){
+                this.state.paddle.position.x =  edgeBounds.left - 1 - this.state.paddle.size.width;
+            }
+            // si on a touché la bordure de gauche
+            if(theEdge.tag === "LeftEdge"){
+                this.state.paddle.position.x =  edgeBounds.right + 1;
+            }
+
+            // on remet a jour le paddle
+            this.state.paddle.update();
+        });  
     }
 
     // Cycle de vie: 3 - Mise a jours des données des GameObject
@@ -391,6 +411,10 @@ class Game
         this.state.balls.forEach( theBall => {
             theBall.update();
         })
+
+        // Briques 
+        // on ne conserves dans le state que les briques dont strength est different de 0 
+        this.state.bricks = this.state.bricks.filter(theBrick => theBrick.strength !== 0 );
     }
 
     // Cycle de vie: 4 - Rendu graphique des GameObjects
@@ -439,6 +463,15 @@ class Game
 
         // Cycle 4
         this.renderObject();
+
+        
+        
+        //S'il n'y a aucune balle dans saveBalls, on a perdu
+        if(this.state.balls.length <= 0){
+            console.log("Aie c'est foutu !!");
+            // on sort de loop()
+            return;
+        }
 
         // Appel de la frame suivante
         requestAnimationFrame(this.loop.bind(this));
