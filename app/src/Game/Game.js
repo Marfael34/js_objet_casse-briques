@@ -10,7 +10,7 @@ import edgeImgsrc from '../assets/img/edge.png';
 import Ball from './Ball';
 import GameObject from './GameObject';
 import CollisionType from './DataType/CollisionType';
-import Paddle from './Paddle';
+import Paddle from './Paddle.js';
 import Brick from './Brick';
 
 class Game
@@ -44,6 +44,11 @@ class Game
 
     // Contexte de dessin du canvas
     ctx;
+
+    // TimeStamps haute résolution de la boucle d'animation
+    currentLoopStamp;
+
+
     // Image
     images = {
         ball: null,
@@ -415,6 +420,9 @@ class Game
         // Briques 
         // on ne conserves dans le state que les briques dont strength est different de 0 
         this.state.bricks = this.state.bricks.filter(theBrick => theBrick.strength !== 0 );
+
+        // Paddle 
+        this.state.paddle.updateKeyframe();
     }
 
     // Cycle de vie: 4 - Rendu graphique des GameObjects
@@ -450,8 +458,9 @@ class Game
     }
 
     // Boucle d'animation
-    loop(){ 
-        
+    loop(stamp){
+        // Enregistrement du stamp actuel
+            this.currentLoopStamp = stamp;
         // Cycle 1
         this.checkUserInput();
 
