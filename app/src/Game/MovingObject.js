@@ -9,6 +9,7 @@ export default class MovingObject extends GameObject
     speed = 1;
     orientation = 45;
     velocity;
+    isCircular = false;
 
     constructor(image, width, height, orientation, speed) {
         super(image, width, height);
@@ -64,10 +65,10 @@ export default class MovingObject extends GameObject
         // Collision Horizontale (bords droite et gauche)
         if(
             (
-                bounds.right >= foreignBounds.left -1
-                && bounds.right <= foreignBounds.right + 1
+                bounds.right >= foreignBounds.left - 1
+                && bounds.right <= foreignBounds.right
                 ||
-                bounds.left <= foreignBounds.right
+                bounds.left <= foreignBounds.right + 1
                 && bounds.left >= foreignBounds.left
             )
             && bounds.top + boundsBias.top >= foreignBounds.top
@@ -79,10 +80,10 @@ export default class MovingObject extends GameObject
         // Collision Verticale (bords haut et bas)
         else if(
             (
-                bounds.top <= foreignBounds.bottom +1
+                bounds.top <= foreignBounds.bottom + 1
                 && bounds.top >= foreignBounds.top
                 ||
-                bounds.bottom >= foreignBounds.top + 1
+                bounds.bottom >= foreignBounds.top - 1
                 && bounds.bottom <= foreignBounds.bottom
             )
             && bounds.left + boundsBias.left >= foreignBounds.left

@@ -15,13 +15,13 @@ export default class GameObject
         this.size = new Size(width, height);
     }
 
-    getBounds(){
+     getBounds() {
         return new Bounds(
             this.position.y,
             this.position.x + this.size.width,
             this.position.y + this.size.height,
             this.position.x
-        )
+        );
     }
 
     setPosition(x, y){

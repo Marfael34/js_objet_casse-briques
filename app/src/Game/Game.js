@@ -148,8 +148,8 @@ class Game
             this.config.ball.position.y
         );
 
+        ball.isCircular = true;
         this.state.balls.push(ball);
-        console.log(ball)
 
         // Bordure de la mort 
         const deathEdge = new GameObject(
