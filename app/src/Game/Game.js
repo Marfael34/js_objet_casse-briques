@@ -253,7 +253,7 @@ class Game
                 this.state.bricks.push(brick)
 
             }
-        } console.log(this.state)
+        } 
     }
 
     // Cycle de vie: 1 - Enntrées Utilisateur

@@ -46,7 +46,6 @@ export default class Paddle extends MovingObject
             if(this.animationIndex > 3)
                 this.animationIndex = 0;
             this.previousKeyFrameStamps = theGame.currentLoopStamp;
-            console.log(this)
         }
 
 }
