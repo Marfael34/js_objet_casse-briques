@@ -359,7 +359,7 @@ class Game
             theBrick.strength --;
 
             if (theBrick.strength === 0) {
-                this.state.score += theBrick.points; // Ajout du score
+                this.state.score += theBrick.type * 100; // Ajout du score
                 this.updateScore(); // Mise à jour de l'affichage
             }
         }); 

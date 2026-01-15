@@ -11,7 +11,6 @@ export default class Brick extends GameObject
             super( image, width, height);
             this.strength = strength;
             this.type = strength;
-            this.points = strength;
         }
 
         draw(){
