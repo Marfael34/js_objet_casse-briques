@@ -13,3 +13,8 @@ canvas{
 h1{
     text-align: center;
 }
+
+span{
+    margin-bottom: 15px;
+    font-size: 30px;
+}

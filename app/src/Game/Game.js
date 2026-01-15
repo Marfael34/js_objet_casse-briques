@@ -72,7 +72,8 @@ class Game
         userInput: {
             paddelLeft: false,
             paddleRight: false
-        }
+        },
+        score:0 
     };
 
     constructor(customConfig = {}, levelsConfig = [] ){
@@ -104,7 +105,11 @@ class Game
         elCanvas.width = this.config.canvasSize.width;
         elCanvas.height = this.config.canvasSize.height;
 
-        document.body.append( elH1, elCanvas);
+        const elScore = document.createElement('span');
+        elScore.textContent = `Score: ${this.state.score}`;
+        this.scoreElement = elScore;
+
+        document.body.append( elH1, elScore, elCanvas);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
@@ -113,6 +118,14 @@ class Game
         document.addEventListener('keydown', this.handlerKeyboad.bind(this, true));
         document.addEventListener('keyup', this.handlerKeyboad.bind(this, false));
     }
+
+    //  une méthode pour mettre à jour le score
+    updateScore() {
+    if (this.scoreElement) {
+        this.scoreElement.textContent = `Score: ${this.state.score}`; 
+    }
+}
+
 
     initImages(){
         //Balle
@@ -134,6 +147,8 @@ class Game
         const imgEdge = new Image();
         imgEdge.src = edgeImgsrc;
         this.images.edge = imgEdge;
+
+        
     }
 
     //Mise en place des objet du jeux sur la scène
@@ -342,7 +357,12 @@ class Game
             // ici on a forcément une collision (car la première clause du switch fait un return)
             //  Décrement compteur de resistance de la brique
             theBrick.strength --;
-            }); 
+
+            if (theBrick.strength === 0) {
+                this.state.score += theBrick.points; // Ajout du score
+                this.updateScore(); // Mise à jour de l'affichage
+            }
+        }); 
         
 
             // Collision avec le paddle
@@ -472,6 +492,8 @@ class Game
 
         // Cycle 4
         this.renderObject();
+
+        
 
         
         
