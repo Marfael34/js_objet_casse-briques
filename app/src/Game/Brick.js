@@ -14,8 +14,22 @@ export default class Brick extends GameObject
         }
 
         draw(){
-            const sourceX = (this.size.width * this.type) - this.size.width;
-            const sourceY = (this.size.height * this.strength) - this.size.height;
+            let sourceX,sourceY;
+            
+            if (this.type == -1) {
+                 sourceX = 50;
+                 sourceY = 0;
+            } else if( this.type == -2){
+                sourceX = 0;
+                 sourceY = 0;
+            }
+            
+            else {
+                sourceX = (this.size.width * this.type) - this.size.width +100;
+                sourceY = (this.size.height * this.strength) - this.size.height;
+            }
+            
+            
 
             theGame.ctx.drawImage(
                 this.image, 

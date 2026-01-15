@@ -356,7 +356,9 @@ class Game
 
             // ici on a forcément une collision (car la première clause du switch fait un return)
             //  Décrement compteur de resistance de la brique
-            theBrick.strength --;
+            if(theBrick.strength !== 0 ){
+                theBrick.strength --;
+            }
 
             if (theBrick.strength === 0) {
                 this.state.score += theBrick.type * 100; // Ajout du score
