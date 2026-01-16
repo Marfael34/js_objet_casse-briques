@@ -36,7 +36,7 @@ class Game
             width: 100,
             height: 20
         },
-        loseModal:{
+        modal:{
             class: {
                 c1:'hidden',
                 c2: 'modal-overlay'
@@ -116,16 +116,27 @@ class Game
 
         const elLoseModal = document.createElement('div');
         elLoseModal.setAttribute('id', 'modale-lose');
-        elLoseModal.classList.add(this.config.loseModal.class.c1);
-        elLoseModal.classList.add(this.config.loseModal.class.c2);
+        elLoseModal.classList.add(this.config.modal.class.c1);
+        elLoseModal.classList.add(this.config.modal.class.c2);
         elLoseModal.innerHTML = `
-        <div class="modal">
-            <p> Aie c'est foutu !! </p>
-            <button class="btn-restart" onclick="window.location.reload()">Rejouer</button>
-        </div>
-            `;
-            
-        document.body.append( elH1, elScore, elCanvas, elLoseModal);
+            <div class="modal">
+                <p> Aie c'est foutu !! </p>
+                <button class="btn-restart" onclick="window.location.reload()">Rejouer</button>
+            </div>
+        `;
+
+        const elWinModal = document.createElement('div');
+        elWinModal.setAttribute('id', 'modale-win');
+        elWinModal.classList.add(this.config.modal.class.c1);
+        elWinModal.classList.add(this.config.modal.class.c2);
+        elWinModal.innerHTML = `
+            <div class="modal">
+                <p> Bravo vous avez fini le niveau</p>
+                <button class="btn-restart" onclick="">Niveaux suivant</button>
+            </div>
+        `;
+
+        document.body.append( elH1, elScore, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
@@ -520,6 +531,18 @@ class Game
             }
 
             console.log("Aie c'est foutu !!");
+            // on sort de loop()
+            return;
+        }
+
+        //S'il n'y a aucune brique dans saveBrique, on a gagner
+        if(this.state.bricks.length <= 0){
+            // On récupère l'élément HTML de la modale
+            const modal = document.getElementById('modale-win');
+            if (modal) {
+                // On retire la classe 'hidden' pour l'afficher
+                modal.classList.remove('hidden');
+            }
             // on sort de loop()
             return;
         }
