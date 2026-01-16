@@ -1,3 +1,4 @@
+// Import de la feuille de style
 import '../assets/css/style.css';
 // Import des donner de configuration 
 import customConfig from '../config.json';
@@ -15,7 +16,6 @@ import Brick from './Brick';
 
 class Game
 {
-
     // Config
     config = {
         canvasSize: {
@@ -53,7 +53,6 @@ class Game
     // TimeStamps haute résolution de la boucle d'animation
     currentLoopStamp;
 
-
     // Image
     images = {
         ball: null,
@@ -78,13 +77,15 @@ class Game
             paddelLeft: false,
             paddleRight: false
         },
-        score:0 
+        score:0,
+        hp:3
+        
     };
 
     constructor(customConfig = {}, levelsConfig = [] ){
         Object.assign(this.config, customConfig);
-
         this.levels = levelsConfig;
+        this.currentLevel= 0;
 
     }
 
@@ -114,6 +115,10 @@ class Game
         elScore.textContent = `Score: ${this.state.score}`;
         this.scoreElement = elScore;
 
+        const elHp = document.createElement('span');
+        elHp.textContent = `Vie: ${this.state.hp}`;
+        this.hpElement = elHp;
+
         const elLoseModal = document.createElement('div');
         elLoseModal.setAttribute('id', 'modale-lose');
         elLoseModal.classList.add(this.config.modal.class.c1);
@@ -121,9 +126,11 @@ class Game
         elLoseModal.innerHTML = `
             <div class="modal">
                 <p> Aie c'est foutu !! </p>
-                <button class="btn-restart" onclick="window.location.reload()">Rejouer</button>
+                <button class="btn-restart btn-rejouer"">Rejouer</button>
             </div>
         `;
+        elLoseModal.querySelector('.btn-rejouer');
+        elLoseModal.addEventListener('click', () => this.playAgain());
 
         const elWinModal = document.createElement('div');
         elWinModal.setAttribute('id', 'modale-win');
@@ -132,11 +139,16 @@ class Game
         elWinModal.innerHTML = `
             <div class="modal">
                 <p> Bravo vous avez fini le niveau</p>
-                <button class="btn-restart" onclick="">Niveaux suivant</button>
+                <button class="btn-restart next-btn">Niveaux suivant</button>
+
             </div>
         `;
 
-        document.body.append( elH1, elScore, elCanvas, elLoseModal, elWinModal);
+        elWinModal.querySelector('.next-btn');
+        elWinModal.addEventListener('click',() => this.nextLevel());
+        
+
+        document.body.append( elH1, elScore,elHp, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
@@ -144,15 +156,10 @@ class Game
         // Ecouteur d'évenement du clavier 
         document.addEventListener('keydown', this.handlerKeyboad.bind(this, true));
         document.addEventListener('keyup', this.handlerKeyboad.bind(this, false));
-    }
 
-    //  une méthode pour mettre à jour le score
-    updateScore() {
-    if (this.scoreElement) {
-        this.scoreElement.textContent = `Score: ${this.state.score}`; 
+        // Ecouteur d'évenement du bouton 
+        
     }
-}
-
 
     initImages(){
         //Balle
@@ -209,7 +216,6 @@ class Game
             this.config.canvasSize.height + 30 
         );
         this.state.deathEdge = deathEdge;
-        // TODO on le dessine ou pas ?
 
         // -- Bordure a rebond
         // Haut
@@ -268,7 +274,7 @@ class Game
         this.state.paddle = paddle;
 
         // Chargement des brique
-        this.loadBricks(this.levels.data[0]);
+        this.loadBricks(this.levels.data[this.currentLevel]);
 
     }
 
@@ -520,19 +526,44 @@ class Game
         // Cycle 4
         this.renderObject();
 
-
-        //S'il n'y a aucune balle dans saveBalls, on a perdu
+        //S'il n'y a aucune balle dans saveBalls, on a perd une vie
         if(this.state.balls.length <= 0){
-            // On récupère l'élément HTML de la modale
-            const modal = document.getElementById('modale-lose');
-            if (modal) {
-                // On retire la classe 'hidden' pour l'afficher
-                modal.classList.remove('hidden');
-            }
+            this.state.hp --;
+            this.updateHP();
 
-            console.log("Aie c'est foutu !!");
-            // on sort de loop()
-            return;
+            if (this.state.hp > 0) {
+                // Il reste des vies : on réinitialise la balle
+                const ballDiamater = this.config.ball.radius * 2;
+                const newBall = new Ball(
+                    this.images.ball,
+                    ballDiamater, 
+                    ballDiamater, 
+                    this.config.ball.orientation, 
+                    this.config.ball.speed
+                );
+                newBall.setPosition(
+                    this.config.ball.position.x, 
+                    this.config.ball.position.y
+                );
+                newBall.isCircular = true;
+                this.state.balls.push(newBall);
+                
+                // On relance la frame suivante après réinitialisation
+                requestAnimationFrame(this.loop.bind(this));
+                return;
+            } else if(this.state.hp <= 0){
+                
+                // On récupère l'élément HTML de la modale
+                const modal = document.getElementById('modale-lose');
+                if (modal) {
+                    // On retire la classe 'hidden' pour l'afficher
+                    modal.classList.remove('hidden');
+                }
+                console.log("Aie c'est foutu !!");
+                // on sort de loop()
+                return;
+        }
+            
         }
 
         //S'il n'y a aucune brique dans saveBrique, on a gagner
@@ -582,7 +613,71 @@ class Game
         }
 
     }
+
+    // Pour passer au niveaux suivant
+    nextLevel() {
+        // Masquer la modale de victoire
+        const modal = document.getElementById('modale-win');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+
+        // Passer au niveau suivant s'il existe
+        if (this.currentLevel < this.levels.data.length - 1) {
+            this.currentLevel ++;
+            
+            
+        } else {
+            // Optionnel : Revenir au premier niveau ou afficher un message de fin
+            this.currentLevel = 0;
+            
+        }
+
+        this.state.balls = [];
+        this.state.bricks = [];
+        this.state.bouncingEdge = [];
+        
+
+        this.initGameObject();
+        requestAnimationFrame(this.loop.bind(this));  
+    }
+
+    // Rejouer
+    playAgain(){
+        // Masquer la modale de victoire
+        const modal = document.getElementById('modale-lose');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+
+        this.state.hp = 3;
+        this.state.score = 0;
+        this.updateHP();
+        this.updateScore();
+
+        this.state.balls = [];
+        this.state.bricks = [];
+        this.state.bouncingEdge = [];
+        
+
+        this.initGameObject();
+        requestAnimationFrame(this.loop.bind(this));  
+    }
+
+     //  une méthode pour mettre à jour le score
+    updateScore() {
+        if (this.scoreElement) {
+            this.scoreElement.textContent = `Score: ${this.state.score}`; 
+        }
+    }
+    // une méthode pour mettre à jour la vie
+    updateHP() {
+        if (this.hpElement) {
+            this.hpElement.textContent = `Vie: ${this.state.hp}`;
+        }
+    }
 }
+
 
 const theGame = new Game(customConfig, levelsConfig);
 
