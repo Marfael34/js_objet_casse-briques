@@ -98,7 +98,7 @@ class Game
         // initialisation des objet du jeux
         this.initGameObject();
         // lancement de la boucle
-        requestAnimationFrame(this.loop.bind(this));
+        
         
     }
 
@@ -118,6 +118,21 @@ class Game
         const elHp = document.createElement('span');
         elHp.textContent = `Vie: ${this.state.hp}`;
         this.hpElement = elHp;
+
+        const elStartModal = document.createElement('div');
+        elStartModal.setAttribute('id', 'modale-start');
+        elStartModal.classList.add(this.config.modal.class.c2);
+        elStartModal.innerHTML = `
+            <div class="modal">
+                <h2> Bienvenue sur Arkanoïd </h2>
+                <p> Prêt pour jouer a un jeux complexe et palpitan </p>
+                <button class="btn-restart btn-play">Jouer</button>
+            </div>
+        `;
+        elStartModal.querySelector('.btn-play').addEventListener('click', () => {
+            elStartModal.classList.add('hidden')
+            requestAnimationFrame(this.loop.bind(this));
+        });
 
         const elLoseModal = document.createElement('div');
         elLoseModal.setAttribute('id', 'modale-lose');
@@ -148,7 +163,7 @@ class Game
         elWinModal.addEventListener('click',() => this.nextLevel());
         
 
-        document.body.append( elH1, elScore,elHp, elCanvas, elLoseModal, elWinModal);
+        document.body.append( elStartModal ,elH1, elScore,elHp, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
