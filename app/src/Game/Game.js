@@ -475,7 +475,7 @@ class Game
         // Mise a jour du state.balls avec saveBalls
         this.state.balls = saveBalls;
 
-                // Collision du paddle avec les bords
+        // Collision du paddle avec les bords
         this.state.bouncingEdge.forEach( theEdge => {
             const collisionType = this.state.paddle.getCollisionType(theEdge);
 
@@ -497,6 +497,19 @@ class Game
             if(theEdge.tag === "LeftEdge"){
                 this.state.paddle.position.x =  edgeBounds.right + 1;
             }
+
+            this.state.weapons = this.state.weapons.filter(weapon => {
+                weapon.update(); // Fait tomber l'arme
+
+                // Si l'arme touche le paddle
+                if (weapon.getCollisionType(this.state.paddle) !== CollisionType.NONE) {
+                    this.applyPower(weapon.type);
+                    return false; // Supprime l'arme du tableau
+                }
+
+                // Supprime si elle sort de l'écran
+                return weapon.position.y < this.config.canvasSize.height;
+            });
 
             // on remet a jour le paddle
             this.state.paddle.update();
@@ -758,6 +771,18 @@ class Game
             this.hpElement.textContent = `Vie: ${this.state.hp}`;
         }
     }
+
+    applyPower(type) {
+    console.log("Pouvoir ramassé : " + type);
+    if (type === 'laser') {
+        // Exemple : On agrandit le paddle
+        this.state.paddle.size.width = 150;
+        // On remet à la normale après 10 secondes
+        setTimeout(() => {
+            this.state.paddle.size.width = this.config.paddleSize.width;
+        }, 10000);
+    }
+}
 }
 
 

@@ -3,9 +3,10 @@ import GameObject from "./GameObject";
 
 export default class Brick extends GameObject
 {
-    type
+    type;
     strength;
     points;
+    weapon;
 
      constructor(image, width, height, strength = 1){
             super( image, width, height);
