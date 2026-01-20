@@ -8,11 +8,13 @@ import ballImgsrc from '../assets/img/ball.png';
 import paddleImgsrc from '../assets/img/paddle.png';
 import brickImgsrc from '../assets/img/brick.png';
 import edgeImgsrc from '../assets/img/edge.png';
+import bonusImgsrc from  '../assets/img/bonus.png';
 import Ball from './Ball';
 import GameObject from './GameObject';
 import CollisionType from './DataType/CollisionType';
 import Paddle from './Paddle.js';
 import Brick from './Brick';
+import Bonus from './Bonus.js';
 
 class Game
 {
@@ -31,6 +33,13 @@ class Game
                 y: 300
             },
             angleAlteration:30
+        },
+        bonusBall:{
+            speed: 3,
+            position: {
+                x: 400,
+                y:300
+            }
         },
         paddleSize: {
             width: 100,
@@ -58,7 +67,8 @@ class Game
         ball: null,
         paddle: null,
         brick: null,
-        edge: null
+        edge: null,
+        bonus : null,
     }
     // State (un objet qui décrit l'état actuel du jeu, les balles, les briques encore présentes, ect.)
     state = {
@@ -70,6 +80,8 @@ class Game
         deathEdge: null,
         // Bordure a rebon
         bouncingEdge: [],
+        // bonus 
+        bonus: [],
         // Paddle
         paddle: null,
         //Entrées utilisateur
@@ -90,7 +102,6 @@ class Game
     }
 
     start(){
-        console.log('Jeu démarrer ...');
         // initialisation de l'interface HTML
         this.initHTMLUI();
          // initialisation des images
@@ -171,8 +182,6 @@ class Game
         // Ecouteur d'évenement du clavier 
         document.addEventListener('keydown', this.handlerKeyboad.bind(this, true));
         document.addEventListener('keyup', this.handlerKeyboad.bind(this, false));
-
-        // Ecouteur d'évenement du bouton 
         
     }
 
@@ -197,6 +206,10 @@ class Game
         imgEdge.src = edgeImgsrc;
         this.images.edge = imgEdge;
 
+        // Bonus 
+        const imgBonus = new Image();
+        imgBonus.src = bonusImgsrc;
+        this.images.bonus = imgBonus;
         
     }
 
@@ -204,7 +217,6 @@ class Game
     initGameObject(){
         // Balle 
         const ballDiamater = this.config.ball.radius * 2
-        console.log(this.images)
         const ball = new Ball(
             this.images.ball,
             ballDiamater, ballDiamater, 
@@ -341,7 +353,7 @@ class Game
         this.state.paddle.update();
     }
 
-    // Cycle de vie: 2 - Collisions et calcules qui en découlent
+   // Cycle de vie: 2 - Collisions et calcules qui en découlent
     checkCollisions(){
 
          // Collision des balles avec tout les objets
@@ -410,6 +422,17 @@ class Game
 
             if (theBrick.strength === 0) {
                 this.state.score += theBrick.type * 100; // Ajout du score
+                // Si la brique a un bonus, on le fait apparaître
+                if (theBrick.bonus) {
+                    const ballDiamater = this.config.ball.radius * 2
+                    const newBonus = new Bonus(
+                        this.images.bonus, // Utilise une image spécifique pour le bonus si dispo
+                        ballDiamater, ballDiamater, 
+                        theBrick.position.x, theBrick.position.y, 
+                        theBrick.bonus
+                    );
+                    this.state.bonus.push(newBonus);
+                }
                 this.updateScore(); // Mise à jour de l'affichage
             }
         }); 
@@ -478,7 +501,25 @@ class Game
             // on remet a jour le paddle
             this.state.paddle.update();
         });  
+
+        const activeBonus = [];
+        this.state.bonus.forEach(TheBonus => {
+        TheBonus.update(); // Fait tomber le bonus
+
+            const collision = TheBonus.getCollisionType(this.state.paddle);
+            
+            if (collision !== CollisionType.NONE) {
+                // Le paddle a ramassé le bonus
+                this.activateBonus(TheBonus.type);
+                // On ne l'ajoute pas à activeBonus, il disparaît
+            } else if (TheBonus.position.y < this.config.canvasSize.height) {
+                // Le bonus est encore à l'écran
+                activeBonus.push(TheBonus);
+            }
+        });
+        this.state.bonus = activeBonus;
     }
+
 
     // Cycle de vie: 3 - Mise a jours des données des GameObject
     updateObjects(){
@@ -523,6 +564,10 @@ class Game
         this.state.balls.forEach(theBall => {
             theBall.draw();
         })
+
+        this.state.bonus.forEach(TheBonus => {
+            TheBonus.draw();
+        });
     }
 
     // Boucle d'animation
@@ -574,7 +619,6 @@ class Game
                     // On retire la classe 'hidden' pour l'afficher
                     modal.classList.remove('hidden');
                 }
-                console.log("Aie c'est foutu !!");
                 // on sort de loop()
                 return;
         }
@@ -597,12 +641,33 @@ class Game
         requestAnimationFrame(this.loop.bind(this));
     }
 
-    // focntion de test inutile dans le jeux 
-    drawtest(){
-        this.ctx.fillStyle = 'rgb(18, 165, 72)';
-        this.ctx.arc(400, 300, 100, Math.PI/6, -Math.PI / 6);
-        this.ctx.closePath();
-        this.ctx.fill();
+    activateBonus(type) {
+        if (type === 'multiball') {
+            // On prend la première balle existante pour copier ses propriétés
+            const referenceBall = this.state.balls[0] || this.config.ball;
+            
+            // On ajoute deux nouvelles balles avec des angles différents
+            [85, 100].forEach(angle => {
+                const newBall = new Ball(
+                    this.images.ball,
+                    this.config.ball.radius * 2,
+                    this.config.ball.radius * 2,
+                    angle,
+                    this.config.ball.speed
+                );
+                newBall.setPosition(this.state.paddle.position.x, this.config.ball.position.y - 20);
+                newBall.isCircular = true;
+                this.state.balls.push(newBall);
+            });
+        }
+
+        if(type === 'bigPaddle'){
+            if( this.state.paddle.size.width < 200){
+                this.state.paddle.size.width += 50;
+                this.state.paddle.update();
+            }
+            
+        }
     }
 
     // Gestionnaire d'évènement DOM
@@ -651,6 +716,7 @@ class Game
         this.state.balls = [];
         this.state.bricks = [];
         this.state.bouncingEdge = [];
+        this.state.bonus = [];
         
 
         this.initGameObject();
@@ -673,6 +739,7 @@ class Game
         this.state.balls = [];
         this.state.bricks = [];
         this.state.bouncingEdge = [];
+        this.state.bonus = [];
         
 
         this.initGameObject();
@@ -685,6 +752,7 @@ class Game
             this.scoreElement.textContent = `Score: ${this.state.score}`; 
         }
     }
+
     // une méthode pour mettre à jour la vie
     updateHP() {
         if (this.hpElement) {

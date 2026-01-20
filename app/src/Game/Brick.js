@@ -11,6 +11,13 @@ export default class Brick extends GameObject
             super( image, width, height);
             this.strength = strength;
             this.type = strength;
+
+            // Distribution aléatoire du bonus (ex: 20% de chance)
+            if (Math.random() < 0.5) {
+                this.bonus = 'multiball';
+            }else if (Math.random() < 1.0){
+                this.bonus = 'bigPaddle'
+            }
         }
 
         draw(){
@@ -35,7 +42,7 @@ export default class Brick extends GameObject
                 this.image, 
                 sourceX,
                 sourceY,
-                 this.size.width,
+                this.size.width,
                 this.size.height,
                 this.position.x,
                 this.position.y,

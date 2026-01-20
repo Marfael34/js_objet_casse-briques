@@ -1,0 +1,48 @@
+this.state.bonus = this.state.bonus.filter((theBonus) => {
+            const collisionType = theBonus.getCollisionType(this.state.paddle);
+
+            // 1. Si pas de collision, on garde le bonus à l'écran
+            if (collisionType === CollisionType.NONE) {
+                return true;
+            }
+
+
+            if (theBonus.tag === "multiball") {
+
+
+                const ballDiameter = this.config.ball.radius * 2;
+                const ballBonus = new Ball(
+                    this.images.ball,
+                    ballDiameter,
+                    ballDiameter,
+                    Math.floor(Math.random() * 360),
+                    this.config.ball.speed
+                );
+
+                ballBonus.setPosition(
+                    this.state.paddle.position.x + (this.state.paddle.size.width / 2),
+                    this.state.paddle.position.y - 40
+                );
+                ballBonus.isCircular = true;
+                this.state.balls.push(ballBonus);
+
+                // On retourne false car le bonus est consommé
+                return false;
+            }
+
+
+            if (theBonus.tag === "bigPaddle") {
+                // MODIFICATION ICI : on change la largeur dans l'objet size
+                this.state.paddle.size.width = 200;
+
+                // Timer pour revenir à la taille normale
+                if (this.paddleTimeout) clearTimeout(this.paddleTimeout);
+                this.paddleTimeout = setTimeout(() => {
+                    this.state.paddle.size.width = 100;
+                }, 10000);
+
+                return false;
+            }
+
+            return false;
+        });

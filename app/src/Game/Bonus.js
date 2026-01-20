@@ -1,23 +1,42 @@
-import theGame from "./Game.js";
 import MovingObject from "./MovingObject";
+import theGame from "./Game";
 
-export default class Paddle extends MovingObject
-{
-    equipment;
+export const BONUS_TYPES = {
+    MULTIBALL: 'multiball',
+    BIG_PADDLE: 'bigPaddle'
+    // Possibilité d'ajouter d'autres types ici : BIG_PADDLE: 'big_paddle', etc.
+};
 
-    // Propriétés pour l'animation
-    animationIndex = 0;
+export default class Bonus extends MovingObject {
+    type;
     previousKeyFrameStamps;
     frameRate = 1;
 
-    draw(){       
-            const sourceY = this.animationIndex * this.size.height;
+    constructor(image, width, height, x, y, type) {
+        // Orientation 270 degrés pour aller vers le bas dans ton système
+        super( image, width, height, 270, 3);
+        this.setPosition(x, y);
+        this.type = type;
+        console.log(type);
+    }
+
+     draw(){
+            let sourceX,sourceY;
+            
+            if (this.type == 'multiball') {
+                sourceX = 0;
+                sourceY = 0;
+            }
+            else if (this.type == 'bigPaddle') {
+                sourceX = 20;
+                sourceY = 0;
+            }
 
             theGame.ctx.drawImage(
                 this.image, 
-                0,
+                sourceX,
                 sourceY,
-                100,
+                this.size.width,
                 this.size.height,
                 this.position.x,
                 this.position.y,
