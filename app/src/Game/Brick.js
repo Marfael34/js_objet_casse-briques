@@ -15,7 +15,7 @@ export default class Brick extends GameObject
             // Distribution aléatoire du bonus (ex: 20% de chance)
             if (Math.random() < 0.5) {
                 this.bonus = 'multiball';
-            }else if (Math.random() < 1.0){
+            }else if (Math.random() < 0.1){
                 this.bonus = 'bigPaddle'
             }
         }
