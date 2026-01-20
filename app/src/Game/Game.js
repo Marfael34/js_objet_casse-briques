@@ -505,12 +505,11 @@ class Game
         const activeBonus = [];
         this.state.bonus.forEach(TheBonus => {
         TheBonus.update(); // Fait tomber le bonus
-
             const collision = TheBonus.getCollisionType(this.state.paddle);
             
             if (collision !== CollisionType.NONE) {
                 // Le paddle a ramassé le bonus
-                this.activateBonus(TheBonus.type);
+                this.activateBonus(TheBonus.type);        
                 // On ne l'ajoute pas à activeBonus, il disparaît
             } else if (TheBonus.position.y < this.config.canvasSize.height) {
                 // Le bonus est encore à l'écran

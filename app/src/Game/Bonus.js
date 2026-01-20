@@ -3,12 +3,13 @@ import theGame from "./Game";
 
 export const BONUS_TYPES = {
     MULTIBALL: 'multiball',
-    BIG_PADDLE: 'bigPaddle'
-    // Possibilité d'ajouter d'autres types ici : BIG_PADDLE: 'big_paddle', etc.
+    BIG_PADDLE: 'bigPaddle',
+    PIERCINGBALL: 'piercingBall'
 };
 
 export default class Bonus extends MovingObject {
     type;
+    animationIndex = 0;
     previousKeyFrameStamps;
     frameRate = 1;
 
@@ -29,6 +30,10 @@ export default class Bonus extends MovingObject {
             }
             else if (this.type == 'bigPaddle') {
                 sourceX = 20;
+                sourceY = 0;
+            } 
+            else if (this.type == 'piercingBall'){
+                sourceX = 40;
                 sourceY = 0;
             }
 
