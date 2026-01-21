@@ -451,9 +451,14 @@ class Game
                     }
 
                     // Décrémentation normale de la résistance
+                    if(this.isMega == true){
+                        theBrick.onDestroy();
+                    }
                     if(theBrick.strength !== 0 ){
                         theBrick.strength --;
                     }
+
+
                 }
 
                 // Gestion du score et des bonus (accessible même en mode Mega)
