@@ -646,15 +646,16 @@ class Game
             
         }
 
-        //S'il n'y a aucune brique dans saveBrique, on a gagner
-        if(this.state.bricks.length <= 0){
-            // On récupère l'élément HTML de la modale
+        // On vérifie s'il reste au moins une brique cassable (strength > 0)
+        const breakableBricks = this.state.bricks.filter(theBrick => theBrick.strength > 0);
+
+        if (breakableBricks.length <= 0) {
+            // On récupère l'élément HTML de la modale de victoire
             const modal = document.getElementById('modale-win');
             if (modal) {
-                // On retire la classe 'hidden' pour l'afficher
                 modal.classList.remove('hidden');
             }
-            // on sort de loop()
+            // On arrête la boucle
             return;
         }
 
@@ -701,23 +702,6 @@ class Game
             }, 10000);
         }
     }
-
-
-    //  méthode pour activer le mode Mega
-    activateMegaBall(duration = 5000) {
-        // Transformer toutes les balles présentes
-        this.state.balls.forEach(ball => {
-            ball.isMega = true;
-        });
-
-        // Optionnel : Timer pour restaurer l'état initial
-        setTimeout(() => {
-            this.state.balls.forEach(ball => {
-                ball.isMega = false;
-            });
-        }, duration);
-    }
-
 
     // Gestionnaire d'évènement DOM
     handlerKeyboad(isActive, evt){
