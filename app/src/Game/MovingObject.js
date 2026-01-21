@@ -66,6 +66,9 @@ export default class MovingObject extends GameObject
                               bounds.top > foreignBounds.bottom);
 
         if (isColliding) {
+            if (typeof foreignGameObject.onDestroy === 'function') {
+                foreignGameObject.onDestroy();
+            }
             // Destruction immédiate
             foreignGameObject.strength = 0; 
             // On retourne NONE pour traverser la brique sans rebondir

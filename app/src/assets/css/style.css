@@ -51,7 +51,7 @@ span {
     display: none !important;
 }
 
-/* Modale de défaite style Arcade */
+/* --- Styles Communs des Modales --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -66,40 +66,87 @@ span {
 }
 
 .modal {
-    background-color: #1a1a1a;
-    border: 6px double #ff0000;
     padding: 40px;
     text-align: center;
-    box-shadow: 0 0 30px #ff0000;
+    background-color: #1a1a1a;
+    border: 6px double;
 }
 
-#modale-lose {
-    color: #ff0000;
-    font-size: 30px; /* Réduit car la police est large */
-    text-shadow: 4px 4px 0px #660000;
-}
-
-/* Bouton Rejouer style "Insert Coin" */
 .btn-restart {
     margin-top: 30px;
     padding: 15px 30px;
     font-family: 'Press Start 2P', cursive;
     font-size: 16px;
-    background-color: #00ff41;
-    color: black;
     border: none;
     cursor: pointer;
-    box-shadow: 4px 4px 0px #008822;
     transition: all 0.1s;
-}
-
-.btn-restart:hover {
-    background-color: #ffff00;
-    box-shadow: 4px 4px 0px #888800;
-    transform: translate(-2px, -2px);
 }
 
 .btn-restart:active {
     transform: translate(2px, 2px);
     box-shadow: none;
+}
+
+/* --- 1. Modale de Démarrage (Style Cyberpunk Bleu) --- */
+#modale-start .modal {
+    border-color: #00d4ff;
+    box-shadow: 0 0 30px #00d4ff;
+    color: #00d4ff;
+}
+
+
+#modale-start .btn-play {
+    background-color: #00d4ff;
+    color: #000;
+    box-shadow: 4px 4px 0px #0088aa;
+}
+
+#modale-start .btn-play:hover {
+    background-color: #ffffff;
+    box-shadow: 4px 4px 0px #cccccc;
+}
+
+/* --- 2. Modale de Défaite (Style Game Over Rouge) --- */
+#modale-lose .modal {
+    border-color: #ff0000;
+    box-shadow: 0 0 30px #ff0000;
+    color: #ff0000;
+}
+
+#modale-lose p {
+    font-size: 24px;
+    text-shadow: 4px 4px 0px #660000;
+}
+
+#modale-lose .btn-rejouer {
+    background-color: #ff0000;
+    color: white;
+    box-shadow: 4px 4px 0px #880000;
+}
+
+#modale-lose .btn-rejouer:hover {
+    background-color: #ff6666;
+}
+
+/* --- 3. Modale de Victoire (Style Level Clear Vert/Or) --- */
+#modale-win .modal {
+    border-color: #00ff41;
+    box-shadow: 0 0 40px #00ff41;
+    color: #ffff00;
+}
+
+#modale-win p {
+    font-size: 20px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+#modale-win .next-btn {
+    background-color: #00ff41;
+    color: black;
+    box-shadow: 4px 4px 0px #008822;
+}
+
+#modale-win .next-btn:hover {
+    background-color: #ffff00;
+    box-shadow: 4px 4px 0px #888800;
 }

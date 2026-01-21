@@ -4,7 +4,7 @@ import MovingObject from "./MovingObject";
 export default class Paddle extends MovingObject
 {
     equipment;
-
+    isSticky = false;
     // Propriétés pour l'animation
     animationIndex = 0;
     previousKeyFrameStamps;

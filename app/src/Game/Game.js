@@ -87,13 +87,17 @@ class Game
         bonus: [],
         // Paddle
         paddle: null,
+        stickyMode: false,
         //Entrées utilisateur
         userInput: {
             paddelLeft: false,
-            paddleRight: false
+            paddleRight: false,
+            launch: false
         },
         score:0,
-        hp:3
+        lastScore: null,
+        hp:3, 
+        level:1
         
     };
 
@@ -125,13 +129,17 @@ class Game
         elCanvas.width = this.config.canvasSize.width;
         elCanvas.height = this.config.canvasSize.height;
 
-        const elScore = document.createElement('span');
-        elScore.textContent = `Score: ${this.state.score}`;
-        this.scoreElement = elScore;
-
-        const elHp = document.createElement('span');
-        elHp.textContent = `Vie: ${this.state.hp}`;
-        this.hpElement = elHp;
+        const elHeader = document.createElement('div');
+        elHeader.innerHTML = `
+            <span id="ui-level">Niveau: ${this.state.level}</span>
+            <span id="ui-score">Score: ${this.state.score}</span> 
+            <span id="ui-hp">Vies: ${this.state.hp}</span> 
+        `;
+        
+        // On stocke les références directes aux spans pour la mise à jour
+        this.uiLevel = elHeader.querySelector('#ui-level');
+        this.uiScore = elHeader.querySelector('#ui-score');
+        this.uiHp = elHeader.querySelector('#ui-hp');
 
         const elStartModal = document.createElement('div');
         elStartModal.setAttribute('id', 'modale-start');
@@ -154,7 +162,7 @@ class Game
         elLoseModal.classList.add(this.config.modal.class.c2);
         elLoseModal.innerHTML = `
             <div class="modal">
-                <p> Aie c'est foutu !! </p>
+                <p> Vous avez Perdu !! </p>
                 <button class="btn-restart btn-rejouer"">Rejouer</button>
             </div>
         `;
@@ -177,7 +185,7 @@ class Game
         elWinModal.addEventListener('click',() => this.nextLevel());
         
 
-        document.body.append( elStartModal ,elH1, elScore,elHp, elCanvas, elLoseModal, elWinModal);
+        document.body.append( elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
@@ -185,6 +193,7 @@ class Game
         // Ecouteur d'évenement du clavier 
         document.addEventListener('keydown', this.handlerKeyboad.bind(this, true));
         document.addEventListener('keyup', this.handlerKeyboad.bind(this, false));
+        
         
     }
 
@@ -359,6 +368,21 @@ class Game
 
         // Mise a jour de la position
         this.state.paddle.update();
+
+        this.state.balls.forEach(ball => {
+            if (ball.isStuck) {
+                // On cale la position X sur celle du paddle + l'offset enregistré au moment de l'impact
+                ball.position.x = this.state.paddle.position.x + ball.stickOffsetx;
+                
+                // On s'assure que Y reste juste au-dessus du paddle (cas où le paddle changerait de taille)
+                ball.position.y = this.state.paddle.position.y - ball.size.height;
+            }
+        });
+
+        // B. Si le joueur appuie sur "Haut", on relâche les balles
+        if (this.state.userInput.launch) {
+            this.releaseStickyBalls();
+        }
     }
 
    // Cycle de vie: 2 - Collisions et calcules qui en découlent
@@ -406,45 +430,50 @@ class Game
             this.state.bricks.forEach(theBrick => {
                 const collisionType = theBall.getCollisionType( theBrick );
 
-                switch( collisionType ) {
-                    case CollisionType.NONE:
-                        return;
-
-                    case CollisionType.HORIZONTAL:
-                        theBall.reverseOrientationX();
-                        break;
-
-                    case CollisionType.VERTICAL:
-                        theBall.reverseOrientationY();
-                        break;
-
-                    default:
-                        break;
+                // Si pas de collision standard ET pas une Mega Ball qui traverse, on ignore
+                if (collisionType === CollisionType.NONE) {
+                    return;
                 }
 
-                // ici on a forcément une collision (car la première clause du switch fait un return)
-                //  Décrement compteur de resistance de la brique
-                if(theBrick.strength !== 0 ){
-                    theBrick.strength --;
+                // Gestion du rebond et de la destruction de brique
+                if (theBall.isMega) {
+                    // La Mega Ball détruit directement la brique sans rebondir
+                    theBrick.strength = 0; 
+                } else {
+                    // Comportement standard : rebond
+                    switch( collisionType ) {
+                        case CollisionType.HORIZONTAL:
+                            theBall.reverseOrientationX();
+                            break;
+                        case CollisionType.VERTICAL:
+                            theBall.reverseOrientationY();
+                            break;
+                    }
+
+                    // Décrémentation normale de la résistance
+                    if(theBrick.strength !== 0 ){
+                        theBrick.strength --;
+                    }
                 }
 
+                // Gestion du score et des bonus (accessible même en mode Mega)
                 if (theBrick.strength === 0) {
                     this.state.score += theBrick.type * 100; // Ajout du score
-                    // Si la brique a un bonus, on le fait apparaître
+                    
                     if (theBrick.bonus) {
                         const ballDiamater = this.config.ball.radius * 2
                         const newBonus = new Bonus(
-                            this.images.bonus, // Utilise une image spécifique pour le bonus si dispo
+                            this.images.bonus, 
                             ballDiamater, ballDiamater, 
                             theBrick.position.x, theBrick.position.y, 
                             theBrick.bonus
                         );
                         this.state.bonus.push(newBonus);
                     }
-                    this.updateScore(); // Mise à jour de l'affichage
+                    this.updateHeader(); // Mise à jour de l'affichage
                 }
                 
-            }); 
+            });
         
 
             // Collision avec le paddle
@@ -458,6 +487,35 @@ class Game
                         break;
 
                     case CollisionType.VERTICAL:
+
+                    // Si le paddle a le bonus, on colle la balle
+                       if (this.state.paddle.isSticky && !theBall.isStuck) {
+                        theBall.isStuck = true;
+                        
+                        // On calcule l'offset pour que la balle reste collée exactement où elle a tapé
+                        theBall.stickOffsetx = theBall.position.x - this.state.paddle.position.x;
+                        
+                        // On positionne la balle parfaitement sur le paddle pour éviter le clipping
+                        theBall.position.y = this.state.paddle.position.y - theBall.size.height;
+                        
+                        // On ne fait PAS de reverseOrientationY ici, la balle s'arrête
+                    } 
+                    else if (!theBall.isStuck) {
+                        
+                        // Comportement standard (Code existant)
+                        let alteration = 0;
+                        if(this.state.userInput.paddleRight){
+                            alteration = -1 * this.config.ball.angleAlteration;
+                        }
+                        else if(this.state.userInput.paddelLeft){
+                            alteration = this.config.ball.angleAlteration;
+                        }
+                        theBall.reverseOrientationY(alteration);
+                        // ... (Correction 0 et 180 existante)
+                    }
+                    break;
+
+                        // si pas de bonus
                         let alteration = 0;
                         if(this.state.userInput.paddleRight){
                             alteration = -1 * this.config.ball.angleAlteration;
@@ -497,7 +555,6 @@ class Game
             // on récupère les limite de  theEdge
             const edgeBounds = theEdge.getBounds();
 
-
             // si on a touché la bordure de droite
             if(theEdge.tag === "RightEdge"){
                 this.state.paddle.position.x =  edgeBounds.left - 1 - this.state.paddle.size.width;
@@ -507,47 +564,41 @@ class Game
                 this.state.paddle.position.x =  edgeBounds.right + 1;
             }
 
-            this.state.bonus = this.state.bonus.filter(Thebonus => {
-                Thebonus.update(); // Fait tomber l'arme
-
-                // Si l'arme touche le paddle
-                if (Thebonus.getCollisionType(this.state.paddle) !== CollisionType.NONE) {
-                    this.applyPower(Thebonus.type);
-                    return false; // Supprime l'arme du tableau
-                }
-
-                // Supprime si elle sort de l'écran
-                return Thebonus.position.y < this.config.canvasSize.height;
-            });
-
             // on remet a jour le paddle
             this.state.paddle.update();
         });  
 
         const activeBonus = [];
         this.state.bonus.forEach(TheBonus => {
-        TheBonus.update(); // Fait tomber le bonus
+            TheBonus.update(); 
             const collision = TheBonus.getCollisionType(this.state.paddle);
             
             if (collision !== CollisionType.NONE) {
-                // Le paddle a ramassé le bonus
                 this.activateBonus(TheBonus.type);        
-                // On ne l'ajoute pas à activeBonus, il disparaît
             } else if (TheBonus.position.y < this.config.canvasSize.height) {
-                // Le bonus est encore à l'écran
+                // Le bonus est conservé tant qu'il n'a pas dépassé le bas du canvas
                 activeBonus.push(TheBonus);
             }
         });
         this.state.bonus = activeBonus;
     }
 
-
     // Cycle de vie: 3 - Mise a jours des données des GameObject
     updateObjects(){
         // Balles 
         this.state.balls.forEach( theBall => {
-            theBall.update();
+            if (theBall.isStuck) {
+                theBall.position.x = this.state.paddle.position.x + theBall.stickyOffsetX
+                // Si la balle est collée, elle suit le paddle
+                theBall.position.x = this.state.paddle.position.x + theBall.stickyOffsetX;
+                // On la place juste au-dessus du paddle
+                theBall.position.y = this.state.paddle.position.y - theBall.size.height;
+            } else {
+                // Sinon elle bouge normalement
+                theBall.update();
+            }
         })
+    
 
         // Briques 
         // on ne conserves dans le state que les briques dont strength est different de 0 
@@ -610,7 +661,9 @@ class Game
         //S'il n'y a aucune balle dans saveBalls, on a perd une vie
         if(this.state.balls.length <= 0){
             this.state.hp --;
-            this.updateHP();
+            this.state.stickyMode = false;
+            this.updateHeader();
+         
 
             if (this.state.hp > 0) {
                 // Il reste des vies : on réinitialise la balle
@@ -628,10 +681,11 @@ class Game
                 );
                 newBall.isCircular = true;
                 this.state.balls.push(newBall);
-                
-                // On relance la frame suivante après réinitialisation
+
+                 // On relance la frame suivante après réinitialisation
                 requestAnimationFrame(this.loop.bind(this));
                 return;
+               
             } else if(this.state.hp <= 0){
                 
                 // On récupère l'élément HTML de la modale
@@ -701,6 +755,18 @@ class Game
                 this.state.balls.forEach(ball => ball.isMega = false);
             }, 10000);
         }
+
+        if (type === 'stickyBall') {
+            this.state.paddle.isSticky = true;
+            
+
+            // Optionnel : Désactivation après 15 secondes
+            setTimeout(() => {
+                this.state.paddle.isSticky = false;
+                // Si des balles étaient collées, on les relâche automatiquement
+                this.releaseStickyBalls();
+            }, 15000);
+        }
     }
 
     // Gestionnaire d'évènement DOM
@@ -716,7 +782,7 @@ class Game
         }
 
         // Flèche gauche
-        else if(evt.key === 'Left' ||evt.key === 'ArrowLeft'){
+        else if(evt.key === 'Left' || evt.key === 'ArrowLeft'){
             // Si on souhaite activer "gauche" mais que droite est déjà activé, on déseactive droite
             if(isActive && this.state.userInput.paddleRight)
                 this.state.userInput.paddleRight = false;
@@ -725,87 +791,101 @@ class Game
 
         }
 
+        if (evt.key === 'ArrowUp' || evt.key === ' ') {
+            this.state.userInput.launch = isActive;
+        }
+        
+
     }
 
     // Pour passer au niveaux suivant
     nextLevel() {
-        // Masquer la modale de victoire
         const modal = document.getElementById('modale-win');
         if (modal) {
             modal.classList.add('hidden');
         }
-
-        // Passer au niveau suivant s'il existe
+        
         if (this.currentLevel < this.levels.data.length - 1) {
-            this.currentLevel ++;
-            
-            
+            this.currentLevel++;
+            this.state.level++; // Incrémente le numéro du niveau affiché
         } else {
-            // Optionnel : Revenir au premier niveau ou afficher un message de fin
             this.currentLevel = 0;
-            
+            this.state.level = 1;
         }
 
         this.state.balls = [];
         this.state.bricks = [];
         this.state.bouncingEdge = [];
         this.state.bonus = [];
+        this.lastScore = this.state.score; // score du niveau précédent
         
-
+        
+        this.updateHeader(); // Met à jour l'affichage (Niveau et Score)
         this.initGameObject();
         requestAnimationFrame(this.loop.bind(this));  
     }
 
     // Rejouer
-    playAgain(){
-        // Masquer la modale de victoire
+    playAgain() {
         const modal = document.getElementById('modale-lose');
         if (modal) {
             modal.classList.add('hidden');
         }
 
         this.state.hp = 3;
-        this.state.score = 0;
-        this.updateHP();
-        this.updateScore();
+        this.state.score = this.state.score - this.lastScore
+        this.state.level = 1; // On revient au niveau 1
+        this.currentLevel = 0; // Index du tableau de niveaux
+        
+        this.updateHeader(); // Rafraîchit l'UI
 
         this.state.balls = [];
         this.state.bricks = [];
         this.state.bouncingEdge = [];
         this.state.bonus = [];
         
-
         this.initGameObject();
         requestAnimationFrame(this.loop.bind(this));  
     }
 
-     //  une méthode pour mettre à jour le score
-    updateScore() {
-        if (this.scoreElement) {
-            this.scoreElement.textContent = `Score: ${this.state.score}`; 
+     //  une méthode pour mettre à jour le header (score, vie et niveaux)
+    updateHeader() {
+        if (this.uiScore) {
+            this.uiScore.textContent = `Score: ${this.state.score}`;
+        }
+        if (this.uiHp) {
+            this.uiHp.textContent = `Vies: ${this.state.hp}`;
+        }
+        if (this.uiLevel) {
+            this.uiLevel.textContent = `Niveau: ${this.state.level}`;
         }
     }
 
-    // une méthode pour mettre à jour la vie
-    updateHP() {
-        if (this.hpElement) {
-            this.hpElement.textContent = `Vie: ${this.state.hp}`;
-        }
-    }
-
-    applyPower(type) {
-    console.log("Pouvoir ramassé : " + type);
-    if (type === 'laser') {
-        // Exemple : On agrandit le paddle
-        this.state.paddle.size.width = 150;
-        // On remet à la normale après 10 secondes
-        setTimeout(() => {
-            this.state.paddle.size.width = this.config.paddleSize.width;
-        }, 10000);
+    releaseStickyBalls() {
+        let released = false;
+        this.state.balls.forEach(ball => {
+            if (ball.isStuck) {
+                ball.isStuck = false;
+                
+                // On applique une impulsion verticale
+                // On peut réutiliser la logique d'angle existante basée sur le mouvement du paddle
+                let alteration = 0;
+                if(this.state.userInput.paddleRight) alteration = -1 * this.config.ball.angleAlteration;
+                else if(this.state.userInput.paddelLeft) alteration = this.config.ball.angleAlteration;
+                    
+                // On s'assure que la balle part vers le haut (orientation standard ~45-135 deg)
+                // On force une orientation de base vers le haut avant d'appliquer l'altération
+                ball.orientation = 90; // 90° = vertical vers le haut (selon repère trigo standard inversé canvas ?)
+                ball.reverseOrientationY(alteration);
+                    
+                released = true;
+            }
+        });
+            
+            // Optionnel : Désactiver le sticky après le tir ? 
+            this.state.paddle.isSticky = false; 
     }
 }
-}
-
 
 const theGame = new Game(customConfig, levelsConfig);
 

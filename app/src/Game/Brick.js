@@ -14,13 +14,16 @@ export default class Brick extends GameObject
             this.type = strength;
 
             // Distribution aléatoire du bonus (ex: 20% de chance)
-            if (Math.random() < 0.5) {
+            if (Math.random() < 0.4) {
                 this.bonus = 'multiball';
-            }else if (Math.random() < 0.1){
+            }else if (Math.random() < 0.2){
                 this.bonus = 'bigPaddle'
             }
             else if (Math.random() < 0.3){
                 this.bonus = "piercingBall"
+            }
+            else if ( Math.random()< 1){
+                this.bonus = 'stickyBall'
             }
         }
 
@@ -56,4 +59,11 @@ export default class Brick extends GameObject
 
             );
         }
+
+        onDestroy() {
+        if (this.strength > 0) { // On vérifie pour ne pas compter les points deux fois
+            theGame.state.score += this.type * 100;
+            theGame.updateHeader();
+        }
+    }
 }

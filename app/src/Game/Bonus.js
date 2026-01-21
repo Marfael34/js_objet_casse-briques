@@ -4,7 +4,8 @@ import theGame from "./Game";
 export const BONUS_TYPES = {
     MULTIBALL: 'multiball',
     BIG_PADDLE: 'bigPaddle',
-    PIERCINGBALL: 'piercingBall'
+    PIERCINGBALL: 'piercingBall',
+    STICKYBALL: 'stickyBall'
 };
 
 export default class Bonus extends MovingObject {
@@ -18,7 +19,6 @@ export default class Bonus extends MovingObject {
         super( image, width, height, 270, 3);
         this.setPosition(x, y);
         this.type = type;
-        console.log(type);
     }
 
      draw(){
@@ -36,6 +36,10 @@ export default class Bonus extends MovingObject {
                 sourceX = 40;
                 sourceY = 0;
             }
+            else if (this.type == 'stickyBall'){
+                sourceX = 60;
+                sourceY = 0;
+            }
 
             theGame.ctx.drawImage(
                 this.image, 
@@ -48,28 +52,6 @@ export default class Bonus extends MovingObject {
                 this.size.width,
                 this.size.height
             );
-        }
-
-        updateKeyframe(){
-            
-            // Toute première keyframe
-            if(!this.previousKeyFrameStamps){
-                this.previousKeyFrameStamps = theGame.currentLoopStamp;
-                return;
-            }
-            const delta = theGame.currentLoopStamp - this.previousKeyFrameStamps;
-            
-            
-            // Si la frame d'animation de la boucle non correspond pas au framerate voulu on sort
-            if(delta < 1000 / this.frameRate) return;
-           
-            // Sinon on met a jour l'index d'animation
-            this.animationIndex ++;
-             
-            
-            if(this.animationIndex > 3)
-                this.animationIndex = 0;
-            this.previousKeyFrameStamps = theGame.currentLoopStamp;
         }
 
 }
