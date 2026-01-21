@@ -27,8 +27,8 @@ export default class Paddle extends MovingObject
         }
 
         updateKeyframe(){
-            
-            // Toute première keyframe
+            if(this.size.height > 20){
+                // Toute première keyframe
             if(!this.previousKeyFrameStamps){
                 this.previousKeyFrameStamps = theGame.currentLoopStamp;
                 return;
@@ -46,6 +46,8 @@ export default class Paddle extends MovingObject
             if(this.animationIndex > 3)
                 this.animationIndex = 0;
             this.previousKeyFrameStamps = theGame.currentLoopStamp;
+            }
+            
         }
 
 }

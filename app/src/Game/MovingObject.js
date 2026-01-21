@@ -52,6 +52,28 @@ export default class MovingObject extends GameObject
     }
 
     getCollisionType( foreignGameObject ) {
+
+        if (this.isMega && foreignGameObject.constructor.name === 'Brick') {
+        // On vérifie s'il y a une collision potentielle
+        // On utilise la logique de détection de collision standard (sans le super)
+        const bounds = this.getBounds();
+        const foreignBounds = foreignGameObject.getBounds();
+        
+        // Simple détection d'intersection AABB
+        const isColliding = !(bounds.right < foreignBounds.left || 
+                              bounds.left > foreignBounds.right || 
+                              bounds.bottom < foreignBounds.top || 
+                              bounds.top > foreignBounds.bottom);
+
+        if (isColliding) {
+            // Destruction immédiate
+            foreignGameObject.strength = 0; 
+            // On retourne NONE pour traverser la brique sans rebondir
+            return CollisionType.NONE; 
+        }
+    }
+
+
         const bounds = this.getBounds();
         const foreignBounds = foreignGameObject.getBounds();
         const radius = this.isCircular ? this.size.width / 2 : 0;

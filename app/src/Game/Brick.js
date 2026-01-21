@@ -19,6 +19,9 @@ export default class Brick extends GameObject
             }else if (Math.random() < 0.1){
                 this.bonus = 'bigPaddle'
             }
+            else if (Math.random() < 0.3){
+                this.bonus = "piercingBall"
+            }
         }
 
         draw(){

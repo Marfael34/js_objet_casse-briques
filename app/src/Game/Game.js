@@ -9,6 +9,8 @@ import paddleImgsrc from '../assets/img/paddle.png';
 import brickImgsrc from '../assets/img/brick.png';
 import edgeImgsrc from '../assets/img/edge.png';
 import bonusImgsrc from  '../assets/img/bonus.png';
+import megaBallImgsrc from '../assets/img/megaBall.png';
+//autre import
 import Ball from './Ball';
 import GameObject from './GameObject';
 import CollisionType from './DataType/CollisionType';
@@ -69,6 +71,7 @@ class Game
         brick: null,
         edge: null,
         bonus : null,
+        megaball: null,
     }
     // State (un objet qui décrit l'état actuel du jeu, les balles, les briques encore présentes, ect.)
     state = {
@@ -210,6 +213,11 @@ class Game
         const imgBonus = new Image();
         imgBonus.src = bonusImgsrc;
         this.images.bonus = imgBonus;
+         
+        // MEGABALL 
+        const imgMegaBall = new Image();
+        imgMegaBall.src = megaBallImgsrc;
+        this.images.megaball = imgMegaBall;
         
     }
 
@@ -414,28 +422,29 @@ class Game
                         break;
                 }
 
-            // ici on a forcément une collision (car la première clause du switch fait un return)
-            //  Décrement compteur de resistance de la brique
-            if(theBrick.strength !== 0 ){
-                theBrick.strength --;
-            }
-
-            if (theBrick.strength === 0) {
-                this.state.score += theBrick.type * 100; // Ajout du score
-                // Si la brique a un bonus, on le fait apparaître
-                if (theBrick.bonus) {
-                    const ballDiamater = this.config.ball.radius * 2
-                    const newBonus = new Bonus(
-                        this.images.bonus, // Utilise une image spécifique pour le bonus si dispo
-                        ballDiamater, ballDiamater, 
-                        theBrick.position.x, theBrick.position.y, 
-                        theBrick.bonus
-                    );
-                    this.state.bonus.push(newBonus);
+                // ici on a forcément une collision (car la première clause du switch fait un return)
+                //  Décrement compteur de resistance de la brique
+                if(theBrick.strength !== 0 ){
+                    theBrick.strength --;
                 }
-                this.updateScore(); // Mise à jour de l'affichage
-            }
-        }); 
+
+                if (theBrick.strength === 0) {
+                    this.state.score += theBrick.type * 100; // Ajout du score
+                    // Si la brique a un bonus, on le fait apparaître
+                    if (theBrick.bonus) {
+                        const ballDiamater = this.config.ball.radius * 2
+                        const newBonus = new Bonus(
+                            this.images.bonus, // Utilise une image spécifique pour le bonus si dispo
+                            ballDiamater, ballDiamater, 
+                            theBrick.position.x, theBrick.position.y, 
+                            theBrick.bonus
+                        );
+                        this.state.bonus.push(newBonus);
+                    }
+                    this.updateScore(); // Mise à jour de l'affichage
+                }
+                
+            }); 
         
 
             // Collision avec le paddle
@@ -498,17 +507,17 @@ class Game
                 this.state.paddle.position.x =  edgeBounds.right + 1;
             }
 
-            this.state.weapons = this.state.weapons.filter(weapon => {
-                weapon.update(); // Fait tomber l'arme
+            this.state.bonus = this.state.bonus.filter(Thebonus => {
+                Thebonus.update(); // Fait tomber l'arme
 
                 // Si l'arme touche le paddle
-                if (weapon.getCollisionType(this.state.paddle) !== CollisionType.NONE) {
-                    this.applyPower(weapon.type);
+                if (Thebonus.getCollisionType(this.state.paddle) !== CollisionType.NONE) {
+                    this.applyPower(Thebonus.type);
                     return false; // Supprime l'arme du tableau
                 }
 
                 // Supprime si elle sort de l'écran
-                return weapon.position.y < this.config.canvasSize.height;
+                return Thebonus.position.y < this.config.canvasSize.height;
             });
 
             // on remet a jour le paddle
@@ -680,7 +689,35 @@ class Game
             }
             
         }
+
+        if( type === 'piercingBall'){
+            this.state.balls.forEach(ball => {
+                ball.isMega = true;
+            });
+            
+            // Optionnel : Désactivation après 10 secondes
+            setTimeout(() => {
+                this.state.balls.forEach(ball => ball.isMega = false);
+            }, 10000);
+        }
     }
+
+
+    //  méthode pour activer le mode Mega
+    activateMegaBall(duration = 5000) {
+        // Transformer toutes les balles présentes
+        this.state.balls.forEach(ball => {
+            ball.isMega = true;
+        });
+
+        // Optionnel : Timer pour restaurer l'état initial
+        setTimeout(() => {
+            this.state.balls.forEach(ball => {
+                ball.isMega = false;
+            });
+        }, duration);
+    }
+
 
     // Gestionnaire d'évènement DOM
     handlerKeyboad(isActive, evt){
