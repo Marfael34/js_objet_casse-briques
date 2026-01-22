@@ -101,8 +101,6 @@ class Game
         currentPlayer: 1,
         playerMode: null,
         
-        
-        
     };
 
     constructor(customConfig = {}, levelsConfig = [] ){
@@ -167,9 +165,7 @@ class Game
             elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
             elNbPlayer.classList.add('hidden');
             elStartModal.classList.remove('hidden');
-            if (this.state.playerMode === 'Duo'){
             this.state.hp = this.players[this.state.currentPlayer].hp;
-         }
             
         });
 
@@ -203,6 +199,20 @@ class Game
             // Mise à jour du niveau
             this.state.level = safeLevel;
             this.currentLevel = safeLevel - 1;
+
+            if(this.state.playerMode === 'Duo'){
+            this.players[1].level = safeLevel;
+            this.players[2].level = safeLevel;
+            this.currentLevel = safeLevel -1;
+
+
+            this.state.balls = [];
+            this.state.bricks = [];
+            this.state.bouncingEdge = [];
+            this.state.bonus = [];
+            this.initGameObject();
+            this.updateHeader();
+        }
    
             // Réinitialisation des objets pour le niveau choisi
             this.state.balls = [];
@@ -756,10 +766,9 @@ class Game
 
         //S'il n'y a aucune balle dans saveBalls, on a perd une vie
         if (this.state.balls.length <= 0) {
+            if (this.state.playerMode === 'Duo') {
             this.state.hp--; // Le joueur actuel perd une vie
             this.updateHeader();
-
-            if (this.state.playerMode === 'Duo') {
                 if (this.state.hp > 0) {
                     this.switchPlayer();
                     requestAnimationFrame(this.loop.bind(this));
@@ -977,19 +986,6 @@ class Game
         if (this.uiLevel) this.uiLevel.textContent = `Niveau: ${this.state.level}`;
     }
 
-    changeLevel(level) {
-        this.state.level = level;
-        this.currentLevel = level - 1;
-
-        this.state.balls = [];
-        this.state.bricks = [];
-        this.state.bouncingEdge = [];
-        this.state.bonus = [];
-
-        this.updateHeader();
-        this.initGameObject();
-    }
-
     switchPlayer() {
         if (this.state.playerMode !== 'Duo') return;
 
@@ -1011,7 +1007,7 @@ class Game
             this.state.currentScore = nextPlayer.currentScore;
             this.state.hp = nextPlayer.hp;
             this.state.level = nextPlayer.level;
-            this.currentLevel = nextPlayer.currentLevel;
+            this.currentLevel = nextPlayer.level -1;
 
             // 4. Réinitialisation visuelle du plateau
             this.state.balls = [];
