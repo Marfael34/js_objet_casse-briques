@@ -95,8 +95,8 @@ class Game
             launch: false
         },
         score:0,
-        lastScore: null,
-        hp:3, 
+        currentScore: 0,
+        hp:1, 
         level:1
         
     };
@@ -464,6 +464,7 @@ class Game
                 // Gestion du score et des bonus (accessible même en mode Mega)
                 if (theBrick.strength === 0) {
                     this.state.score += theBrick.type * 100; // Ajout du score
+                    this.state.currentScore += theBrick.type *100
                     
                     if (theBrick.bonus) {
                         const ballDiamater = this.config.ball.radius * 2
@@ -720,6 +721,7 @@ class Game
 
         // Appel de la frame suivante
         requestAnimationFrame(this.loop.bind(this));
+        
     }
 
     activateBonus(type) {
@@ -818,12 +820,11 @@ class Game
             this.state.level = 1;
         }
 
+        this.state.currentScore = 0
         this.state.balls = [];
         this.state.bricks = [];
         this.state.bouncingEdge = [];
         this.state.bonus = [];
-        this.lastScore = this.state.score; // score du niveau précédent
-        
         
         this.updateHeader(); // Met à jour l'affichage (Niveau et Score)
         this.initGameObject();
@@ -837,10 +838,14 @@ class Game
             modal.classList.add('hidden');
         }
 
-        this.state.hp = 3;
-        this.state.score = this.state.score - this.lastScore
-        this.state.level = 1; // On revient au niveau 1
-        this.currentLevel = 0; // Index du tableau de niveaux
+        this.state.hp = 1;
+        
+        this.state.score -= this.state.currentScore;
+        this.state.currentScore = 0;
+        // remise a zero du score du niveaux
+        this.state.level = this.state.level; // On revient au niveau 1
+        console.log(this.state.level)
+        this.currentLevel = this.state.level -1; // Index du tableau de niveaux
         
         this.updateHeader(); // Rafraîchit l'UI
 
