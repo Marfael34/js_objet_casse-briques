@@ -66,7 +66,13 @@ class Game
         edge: null,
         bonus : null,
         megaball: null,
-    }
+    };
+
+    players = {
+            1:{ score: 0, hp:3, level:1, currentScore:0},
+            2:{ score: 0, hp:3, level:1, currentScore:0}
+            
+    };
     // State (un objet qui décrit l'état actuel du jeu, les balles, les briques encore présentes, ect.)
     state = {
         // Balles (plusieurs car possible multiball)
@@ -92,17 +98,10 @@ class Game
         currentScore: 0,
         hp:3, 
         level:1,
+        currentPlayer: 1,
         playerMode: null,
-        player1: {
-            score: 0,
-            currentScore:0,
-            hp:3
-        },
-        player2:{
-            score: 0,
-            currentScore:0,
-            hp:3
-        }
+        
+        
         
     };
 
@@ -120,9 +119,6 @@ class Game
         this.initImages();
         // initialisation des objet du jeux
         this.initGameObject();
-        // lancement de la boucle
-        
-        
     }
 
     // Méthode "privées"
@@ -170,8 +166,11 @@ class Game
             this.state.playerMode = 'Duo';
             elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
             elNbPlayer.classList.add('hidden');
-            elStartModal.classList.remove('hidden')
-
+            elStartModal.classList.remove('hidden');
+            if (this.state.playerMode === 'Duo'){
+            this.state.hp = this.players[this.state.currentPlayer].hp;
+         }
+            
         });
 
         // Modale start/home
@@ -737,6 +736,7 @@ class Game
 
     // Boucle d'animation
     loop(stamp){
+
         // Enregistrement du stamp actuel
             this.currentLoopStamp = stamp;
         // Cycle 1
@@ -751,45 +751,72 @@ class Game
         // Cycle 4
         this.renderObject();
 
-        //S'il n'y a aucune balle dans saveBalls, on a perd une vie
-        if(this.state.balls.length <= 0){
-            this.state.hp --;
-            this.state.stickyMode = false;
-            this.updateHeader();
          
+        
 
-            if (this.state.hp > 0) {
-                // Il reste des vies : on réinitialise la balle
-                const ballDiamater = this.config.ball.radius * 2;
-                const newBall = new Ball(
-                    this.images.ball,
-                    ballDiamater, 
-                    ballDiamater, 
-                    this.config.ball.orientation, 
-                    this.config.ball.speed
-                );
-                newBall.setPosition(
-                    this.config.ball.position.x, 
-                    this.config.ball.position.y
-                );
-                newBall.isCircular = true;
-                this.state.balls.push(newBall);
+        //S'il n'y a aucune balle dans saveBalls, on a perd une vie
+        if (this.state.balls.length <= 0) {
+            this.state.hp--; // Le joueur actuel perd une vie
+            this.updateHeader();
 
-                 // On relance la frame suivante après réinitialisation
-                requestAnimationFrame(this.loop.bind(this));
-                return;
-               
-            } else if(this.state.hp <= 0){
-                
-                // On récupère l'élément HTML de la modale
-                const modal = document.getElementById('modale-lose');
-                if (modal) {
-                    // On retire la classe 'hidden' pour l'afficher
-                    modal.classList.remove('hidden');
+            if (this.state.playerMode === 'Duo') {
+                if (this.state.hp > 0) {
+                    this.switchPlayer();
+                    requestAnimationFrame(this.loop.bind(this));
+                    return;
+                } else {
+                    // Joueur éliminé, on vérifie si l'autre peut encore jouer
+                    const otherId = (this.state.currentPlayer === 1) ? 2 : 1;
+                    if (this.players[otherId].hp > 0) {
+                        this.switchPlayer();
+                        requestAnimationFrame(this.loop.bind(this));
+                        return;
+                    } else {
+                        document.getElementById('modale-lose').classList.remove('hidden');
+                        return;
+                    }
                 }
-                // on sort de loop()
-                return;
-        }
+            }
+
+            if(this.state.playerMode === 'Solo'){
+                this.state.hp --;
+                this.state.stickyMode = false;
+                this.updateHeader();
+            
+
+                if (this.state.hp > 0) {
+                    // Il reste des vies : on réinitialise la balle
+                    const ballDiamater = this.config.ball.radius * 2;
+                    const newBall = new Ball(
+                        this.images.ball,
+                        ballDiamater, 
+                        ballDiamater, 
+                        this.config.ball.orientation, 
+                        this.config.ball.speed
+                    );
+                    newBall.setPosition(
+                        this.config.ball.position.x, 
+                        this.config.ball.position.y
+                    );
+                    newBall.isCircular = true;
+                    this.state.balls.push(newBall);
+
+                    // On relance la frame suivante après réinitialisation
+                    requestAnimationFrame(this.loop.bind(this));
+                    return;
+                
+                } else if(this.state.hp <= 0){
+                    
+                    // On récupère l'élément HTML de la modale
+                    const modal = document.getElementById('modale-lose');
+                    if (modal) {
+                        // On retire la classe 'hidden' pour l'afficher
+                        modal.classList.remove('hidden');
+                    }
+                    // on sort de loop()
+                    return;
+                }
+            }
             
         }
 
@@ -943,15 +970,11 @@ class Game
 
     //  une méthode pour mettre à jour le header (score, vie et niveaux)
     updateHeader() {
-        if (this.uiScore) {
-            this.uiScore.textContent = `Score: ${this.state.score}`;
-        }
-        if (this.uiHp) {
-            this.uiHp.textContent = `Vies: ${this.state.hp}`;
-        }
-        if (this.uiLevel) {
-            this.uiLevel.textContent = `Niveau: ${this.state.level}`;
-        }
+        const prefix = this.state.playerMode === 'Duo' ? `J${this.state.currentPlayer} - ` : '';
+        
+        if (this.uiScore) this.uiScore.textContent = `${prefix}Score: ${this.state.score}`;
+        if (this.uiHp) this.uiHp.textContent = `${prefix}Vies: ${this.state.hp}`;
+        if (this.uiLevel) this.uiLevel.textContent = `Niveau: ${this.state.level}`;
     }
 
     changeLevel(level) {
@@ -966,6 +989,41 @@ class Game
         this.updateHeader();
         this.initGameObject();
     }
+
+    switchPlayer() {
+        if (this.state.playerMode !== 'Duo') return;
+
+            // 1. Sauvegarde des données du joueur qui vient de finir son tour
+            this.players[this.state.currentPlayer] = {
+                score: this.state.score,
+                currentScore: this.state.currentScore,
+                hp: this.state.hp, // Utilise les vies restantes du state
+                level: this.state.level,
+                currentLevel: this.currentLevel
+            };
+
+            // 2. Bascule de l'index du joueur (1 -> 2 ou 2 -> 1)
+            this.state.currentPlayer = (this.state.currentPlayer === 1) ? 2 : 1;
+
+            // 3. Chargement des données du nouveau joueur
+            const nextPlayer = this.players[this.state.currentPlayer];
+            this.state.score = nextPlayer.score;
+            this.state.currentScore = nextPlayer.currentScore;
+            this.state.hp = nextPlayer.hp;
+            this.state.level = nextPlayer.level;
+            this.currentLevel = nextPlayer.currentLevel;
+
+            // 4. Réinitialisation visuelle du plateau
+            this.state.balls = [];
+            this.state.bricks = [];
+            this.state.bonus = [];
+            this.state.bouncingEdge = [];
+            
+            this.initGameObject();
+            this.updateHeader();
+            
+            alert(`Au tour du Joueur ${this.state.currentPlayer} !`);
+        }
 
     resetGameState() {
         this.ctx.clearRect(
