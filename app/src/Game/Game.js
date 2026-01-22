@@ -141,21 +141,48 @@ class Game
         this.uiScore = elHeader.querySelector('#ui-score');
         this.uiHp = elHeader.querySelector('#ui-hp');
 
+        // Modale start/home
+        const maxLevels = this.levels.data.length;
         const elStartModal = document.createElement('div');
         elStartModal.setAttribute('id', 'modale-start');
         elStartModal.classList.add(this.config.modal.class.c2);
         elStartModal.innerHTML = `
             <div class="modal">
                 <h2> Bienvenue sur Arkanoïd </h2>
-                <p> Prêt pour jouer a un jeux complexe et palpitan </p>
-                <button class="btn-restart btn-play">Jouer</button>
+                <label for="level-select">Choisir un niveau :</label>
+                <select id="level-select" class="level-select">
+                    ${Array.from({ length: maxLevels }, (_, i) =>
+                        `<option value="${i+1}">Niveau ${i + 1}</option>`
+                    ).join('')}
+                </select>
+                <button class="btn btn-play">Jouer</button>
             </div>
         `;
-        elStartModal.querySelector('.btn-play').addEventListener('click', () => {
+      
+        // ecouteure de click 
+        elStartModal.querySelector('.btn-play').addEventListener('click', () => {  
+
+            const selectedLevel = parseInt(elStartModal.querySelector('#level-select').value);
+            const maxLevels = this.levels.data.length;
+            const safeLevel = Math.min(Math.max(selectedLevel, 1), maxLevels);
+            // Mise à jour du niveau
+            this.state.level = safeLevel;
+            this.currentLevel = safeLevel - 1;
+   
+            // Réinitialisation des objets pour le niveau choisi
+            this.state.balls = [];
+            this.state.bricks = [];
+            this.state.bouncingEdge = [];
+            this.state.bonus = [];
+
+            this.initGameObject();
+            this.updateHeader();
+
             elStartModal.classList.add('hidden')
             requestAnimationFrame(this.loop.bind(this));
         });
 
+        // Modale lose
         const elLoseModal = document.createElement('div');
         elLoseModal.setAttribute('id', 'modale-lose');
         elLoseModal.classList.add(this.config.modal.class.c1);
@@ -163,12 +190,18 @@ class Game
         elLoseModal.innerHTML = `
             <div class="modal">
                 <p> Vous avez Perdu !! </p>
-                <button class="btn-restart btn-rejouer"">Rejouer</button>
+                <button class="btn btn-rejouer">Rejouer</button>
+                <button class="btn btn-home"> Acceuil </button>
             </div>
         `;
-        elLoseModal.querySelector('.btn-rejouer');
-        elLoseModal.addEventListener('click', () => this.playAgain());
-
+        // ecouteure de click 
+        elLoseModal.querySelector('.btn-rejouer').addEventListener('click', () => this.playAgain());
+        elLoseModal.querySelector('.btn-home').addEventListener('click', () => {
+            elLoseModal.classList.add('hidden');
+            elStartModal.classList.remove('hidden');
+            this.resetGameState();
+        });
+        // Modale win
         const elWinModal = document.createElement('div');
         elWinModal.setAttribute('id', 'modale-win');
         elWinModal.classList.add(this.config.modal.class.c1);
@@ -176,13 +209,17 @@ class Game
         elWinModal.innerHTML = `
             <div class="modal">
                 <p> Bravo vous avez fini le niveau</p>
-                <button class="btn-restart next-btn">Niveaux suivant</button>
-
+                <button class="btn next-btn">Niveaux suivant</button>
+                <button class="btn btn-home"> Acceuil </button>
             </div>
         `;
-
-        elWinModal.querySelector('.next-btn');
-        elWinModal.addEventListener('click',() => this.nextLevel());
+        // ecouter de click
+        elWinModal.querySelector('.next-btn').addEventListener('click', () => this.nextLevel());
+        elWinModal.querySelector('.btn-home').addEventListener('click', () => {
+            elWinModal.classList.add('hidden');
+            elStartModal.classList.remove('hidden');
+            this.resetGameState();
+        });
         
 
         document.body.append( elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
@@ -323,30 +360,40 @@ class Game
     }
 
     // Création des briques
-    loadBricks(levelArray){
-        for(let line = 0; line < levelArray.length; line ++){
-            for(let column = 0; column < levelArray[line].length; column ++){
-                let brickType = levelArray[line][column];
-                // Si la valeur trouver est 0, c'est un espace vide, donc on passe à la colonne suivante 
-                if(brickType == 0) continue;
+    loadBricks(levelArray) {
 
-                // Si on a bien une birque, on la créer et on la met dans le state
-                const brick = new Brick(
-                    this.images.brick, 
-                    50, 
-                    25,
-                    brickType
-                );
-                brick.setPosition(
-                    20 + (50 * column), 
-                    20 + (25 * line)
-                );
-
-                this.state.bricks.push(brick)
-
-            }
-        } 
+    // ✅ sécurité : si le niveau n'existe pas
+    if (!levelArray || !Array.isArray(levelArray)) {
+        console.error("❌ Niveau invalide :", levelArray);
+        console.warn("⚠️ Retour au niveau 1");
+        levelArray = this.levels.data[0]; // fallback niveau 1
+        this.currentLevel = 0;
+        this.state.level = 1;
     }
+
+    for (let line = 0; line < levelArray.length; line++) {
+        for (let column = 0; column < levelArray[line].length; column++) {
+
+            let brickType = levelArray[line][column];
+
+            if (brickType == 0) continue;
+
+            const brick = new Brick(
+                this.images.brick,
+                50,
+                25,
+                brickType
+            );
+
+            brick.setPosition(
+                20 + (50 * column),
+                20 + (25 * line)
+            );
+
+            this.state.bricks.push(brick);
+        }
+    }
+}
 
     // Cycle de vie: 1 - Enntrées Utilisateur
     checkUserInput(){
@@ -838,15 +885,11 @@ class Game
             modal.classList.add('hidden');
         }
 
-        this.state.hp = 3;
-        
+        this.state.hp = 1;
         this.state.score -= this.state.currentScore;
         this.state.currentScore = 0;
-        // remise a zero du score du niveaux
-        this.state.level = this.state.level; // On revient au niveau 1
-        console.log(this.state.level)
         this.currentLevel = this.state.level -1; // Index du tableau de niveaux
-        
+    
         this.updateHeader(); // Rafraîchit l'UI
 
         this.state.balls = [];
@@ -858,7 +901,7 @@ class Game
         requestAnimationFrame(this.loop.bind(this));  
     }
 
-     //  une méthode pour mettre à jour le header (score, vie et niveaux)
+    //  une méthode pour mettre à jour le header (score, vie et niveaux)
     updateHeader() {
         if (this.uiScore) {
             this.uiScore.textContent = `Score: ${this.state.score}`;
@@ -869,6 +912,39 @@ class Game
         if (this.uiLevel) {
             this.uiLevel.textContent = `Niveau: ${this.state.level}`;
         }
+    }
+
+    changeLevel(level) {
+        this.state.level = level;
+        this.currentLevel = level - 1;
+
+        this.state.balls = [];
+        this.state.bricks = [];
+        this.state.bouncingEdge = [];
+        this.state.bonus = [];
+
+        this.updateHeader();
+        this.initGameObject();
+    }
+
+    resetGameState() {
+        this.ctx.clearRect(
+                0,
+                0, 
+                this.config.canvasSize.width, 
+                this.config.canvasSize.height
+            );
+        this.state.hp = 3;
+        this.state.score = 0;
+        this.state.currentScore = 0;
+        this.state.level = 1;
+        this.currentLevel = 0;
+        this.state.balls = [];
+        this.state.bricks = [];
+        this.state.bouncingEdge = [];
+        this.state.bonus = [];
+        this.updateHeader();
+        this.initGameObject(); // Prépare les objets sans lancer la boucle
     }
 
     releaseStickyBalls() {

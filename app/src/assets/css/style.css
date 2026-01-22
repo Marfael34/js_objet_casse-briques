@@ -72,7 +72,7 @@ span {
     border: 6px double;
 }
 
-.btn-restart {
+.btn {
     margin-top: 30px;
     padding: 15px 30px;
     font-family: 'Press Start 2P', cursive;
@@ -82,7 +82,7 @@ span {
     transition: all 0.1s;
 }
 
-.btn-restart:active {
+.btn:active {
     transform: translate(2px, 2px);
     box-shadow: none;
 }
@@ -92,6 +92,45 @@ span {
     border-color: #00d4ff;
     box-shadow: 0 0 30px #00d4ff;
     color: #00d4ff;
+}
+/* [Fichier : src/assets/css/style.css] */
+
+/* Style de la liste déroulante (Select) */
+.level-select {
+    display: block;
+    width: 80%;
+    margin: 20px auto;
+    padding: 12px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    background-color: #050505; /* Fond noir comme le body */
+    color: #ffff00; /* Texte jaune rétro */
+    border: 3px solid #00d4ff; /* Bordure bleue électrique */
+    box-shadow: 0 0 10px #00d4ff;
+    cursor: pointer;
+    outline: none;
+    text-align: center;
+    appearance: none; /* Supprime le style natif du navigateur */
+    -webkit-appearance: none;
+}
+
+/* Style des options à l'intérieur de la liste */
+.level-select option {
+    background-color: #1a1a1a;
+    color: #00ff41; /* Vert terminal pour les options */
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Effet au survol du select */
+.level-select:hover {
+    border-color: #ff00ff; /* Change en rose néon au survol */
+    box-shadow: 0 0 15px #ff00ff;
+    color: #ffffff;
+}
+
+/* On ajuste la taille de la modale pour la grille */
+#modale-start .modal {
+    min-width: 400px;
 }
 
 
