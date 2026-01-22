@@ -96,7 +96,7 @@ class Game
         },
         score:0,
         currentScore: 0,
-        hp:1, 
+        hp:3, 
         level:1
         
     };
@@ -838,7 +838,7 @@ class Game
             modal.classList.add('hidden');
         }
 
-        this.state.hp = 1;
+        this.state.hp = 3;
         
         this.state.score -= this.state.currentScore;
         this.state.currentScore = 0;
