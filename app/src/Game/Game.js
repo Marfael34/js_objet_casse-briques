@@ -199,20 +199,6 @@ class Game
             // Mise à jour du niveau
             this.state.level = safeLevel;
             this.currentLevel = safeLevel - 1;
-
-            if(this.state.playerMode === 'Duo'){
-            this.players[1].level = safeLevel;
-            this.players[2].level = safeLevel;
-            this.currentLevel = safeLevel -1;
-
-
-            this.state.balls = [];
-            this.state.bricks = [];
-            this.state.bouncingEdge = [];
-            this.state.bonus = [];
-            this.initGameObject();
-            this.updateHeader();
-        }
    
             // Réinitialisation des objets pour le niveau choisi
             this.state.balls = [];
@@ -961,7 +947,7 @@ class Game
             modal.classList.add('hidden');
         }
 
-        this.state.hp = 1;
+        this.state.hp = 3;
         this.state.score -= this.state.currentScore;
         this.state.currentScore = 0;
         this.currentLevel = this.state.level -1; // Index du tableau de niveaux
