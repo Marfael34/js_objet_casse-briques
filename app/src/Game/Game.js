@@ -46,12 +46,6 @@ class Game
         paddleSize: {
             width: 100,
             height: 20
-        },
-        modal:{
-            class: {
-                c1:'hidden',
-                c2: 'modal-overlay'
-            }
         }
     }
 
@@ -97,7 +91,18 @@ class Game
         score:0,
         currentScore: 0,
         hp:3, 
-        level:1
+        level:1,
+        playerMode: null,
+        player1: {
+            score: 0,
+            currentScore:0,
+            hp:3
+        },
+        player2:{
+            score: 0,
+            currentScore:0,
+            hp:3
+        }
         
     };
 
@@ -141,14 +146,44 @@ class Game
         this.uiScore = elHeader.querySelector('#ui-score');
         this.uiHp = elHeader.querySelector('#ui-hp');
 
+        // Modale choix nb joueur
+        const elNbPlayer = document.createElement('div');
+        elNbPlayer.setAttribute('id', 'modale-nbplayer');
+        elNbPlayer.classList.add('modal-overlay');
+        elNbPlayer.innerHTML = `
+            <div class="modal">
+                <h2> Bienvenue sur Arkanoïd </h2>
+                <p> Choisissez le nombre de joueurs </p>
+                <button class="btn solo-btn">Solo</button>
+                <button class="btn duo-btn"> Duo </button>
+            </div>
+        `;
+        elNbPlayer.querySelector('.solo-btn').addEventListener('click', () => {
+            this.state.playerMode = 'Solo';
+            elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
+            elNbPlayer.classList.add('hidden');
+            elStartModal.classList.remove('hidden')
+
+        });
+
+        elNbPlayer.querySelector('.duo-btn').addEventListener('click', () => {
+            this.state.playerMode = 'Duo';
+            elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
+            elNbPlayer.classList.add('hidden');
+            elStartModal.classList.remove('hidden')
+
+        });
+
         // Modale start/home
         const maxLevels = this.levels.data.length;
         const elStartModal = document.createElement('div');
         elStartModal.setAttribute('id', 'modale-start');
-        elStartModal.classList.add(this.config.modal.class.c2);
+        elStartModal.classList.add('hidden');
+        elStartModal.classList.add('modal-overlay');
         elStartModal.innerHTML = `
             <div class="modal">
                 <h2> Bienvenue sur Arkanoïd </h2>
+                <p id="display-player-mode""></p>
                 <label for="level-select">Choisir un niveau :</label>
                 <select id="level-select" class="level-select">
                     ${Array.from({ length: maxLevels }, (_, i) =>
@@ -156,9 +191,10 @@ class Game
                     ).join('')}
                 </select>
                 <button class="btn btn-play">Jouer</button>
+                <button class="btn btn-nbplayer">Nb joueur</button>
             </div>
         `;
-      
+        const elModeDisplay = elStartModal.querySelector('#display-player-mode'); // Référence au texte
         // ecouteure de click 
         elStartModal.querySelector('.btn-play').addEventListener('click', () => {  
 
@@ -181,12 +217,16 @@ class Game
             elStartModal.classList.add('hidden')
             requestAnimationFrame(this.loop.bind(this));
         });
+        elStartModal.querySelector('.btn-nbplayer').addEventListener('click', () => {
+            elStartModal.classList.add('hidden');
+            elNbPlayer.classList.remove('hidden');
+        })
 
         // Modale lose
         const elLoseModal = document.createElement('div');
         elLoseModal.setAttribute('id', 'modale-lose');
-        elLoseModal.classList.add(this.config.modal.class.c1);
-        elLoseModal.classList.add(this.config.modal.class.c2);
+        elLoseModal.classList.add('hidden');
+        elLoseModal.classList.add('modal-overlay');
         elLoseModal.innerHTML = `
             <div class="modal">
                 <p> Vous avez Perdu !! </p>
@@ -204,8 +244,8 @@ class Game
         // Modale win
         const elWinModal = document.createElement('div');
         elWinModal.setAttribute('id', 'modale-win');
-        elWinModal.classList.add(this.config.modal.class.c1);
-        elWinModal.classList.add(this.config.modal.class.c2);
+        elWinModal.classList.add('hidden');
+        elWinModal.classList.add('modal-overlay');
         elWinModal.innerHTML = `
             <div class="modal">
                 <p> Bravo vous avez fini le niveau</p>
@@ -222,7 +262,7 @@ class Game
         });
         
 
-        document.body.append( elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
+        document.body.append( elNbPlayer, elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
