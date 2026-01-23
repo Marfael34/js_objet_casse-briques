@@ -236,6 +236,7 @@ class Game
         const elModeDisplay2 = elStartModalDuo.querySelector('#display-player-mode');
         elStartModalDuo.querySelector('#btn-play-duo').addEventListener('click', () => {  
             this.state.level = 1;
+            this.state.currentPlayer = 1
             this.initGameObject();
             this.updateHeader();
 
@@ -333,101 +334,39 @@ class Game
     }
 
     //Mise en place des objet du jeux sur la scène
-    initGameObject(){
-        // Balle 
-        const ballDiamater = this.config.ball.radius * 2
-        const ball = new Ball(
-            this.images.ball,
-            ballDiamater, ballDiamater, 
-            this.config.ball.orientation, 
-            this.config.ball.speed
-        );
-
-        ball.setPosition(
-            this.config.ball.position.x, 
-            this.config.ball.position.y
-        );
-
+    initGameObject() {
+        const ballDiamater = this.config.ball.radius * 2;
+        const ball = new Ball(this.images.ball, ballDiamater, ballDiamater, this.config.ball.orientation, this.config.ball.speed);
+        ball.setPosition(this.config.ball.position.x, this.config.ball.position.y);
         ball.isCircular = true;
         this.state.balls.push(ball);
 
-        // Bordure de la mort 
-        const deathEdge = new GameObject(
-            this.images.edge, 
-            this.config.canvasSize.width, 
-            20
-        );
-        deathEdge.setPosition( 
-            0, 
-            this.config.canvasSize.height + 30 
-        );
+        const deathEdge = new GameObject(this.images.edge, this.config.canvasSize.width, 20);
+        deathEdge.setPosition(0, this.config.canvasSize.height + 30);
         this.state.deathEdge = deathEdge;
 
-        // -- Bordure a rebond
-        // Haut
-        const edgeTop = new GameObject(
-            this.images.edge, 
-            this.config.canvasSize.width, 
-            20
-        );
-        edgeTop.setPosition(
-            0, 
-            0
-        );
-        // Droite
-        const edgeRight = new GameObject(
-            this.images.edge, 
-            20, 
-            this.config.canvasSize.height + 10
-        );
-        edgeRight.setPosition(
-            this.config.canvasSize.width - 20, 
-            20
-        );
+        const edgeTop = new GameObject(this.images.edge, this.config.canvasSize.width, 20);
+        edgeTop.setPosition(0, 0);
+        const edgeRight = new GameObject(this.images.edge, 20, this.config.canvasSize.height + 10);
+        edgeRight.setPosition(this.config.canvasSize.width - 20, 20);
         edgeRight.tag = "RightEdge";
-        
-        // Gauche
-        const edgeLeft = new GameObject(
-            this.images.edge, 
-            20, 
-            this.config.canvasSize.height + 10
-        );
-        edgeLeft.setPosition(
-            0, 
-            20
-        );
+        const edgeLeft = new GameObject(this.images.edge, 20, this.config.canvasSize.height + 10);
+        edgeLeft.setPosition(0, 20);
         edgeLeft.tag = "LeftEdge";
 
-        // Ajout dans la liste des bords
-        this.state.bouncingEdge.push(
-            edgeTop, 
-            edgeRight, 
-            edgeLeft
-        );
+        this.state.bouncingEdge = [edgeTop, edgeRight, edgeLeft];
 
-        //Paddle
-        const paddle = new Paddle(
-            this.images.paddle, 
-            this.config.paddleSize.width, 
-            this.config.paddleSize.height, 
-            0, 
-            0
-        );
-        paddle.setPosition(
-           (this.config.canvasSize.width / 2) - (this.config.paddleSize.width /2), 
-            this.config.canvasSize.height - this.config.paddleSize.height - 20
-        );
+        const paddle = new Paddle(this.images.paddle, this.config.paddleSize.width, this.config.paddleSize.height, 0, 0);
+        paddle.setPosition((this.config.canvasSize.width / 2) - (this.config.paddleSize.width / 2), this.config.canvasSize.height - this.config.paddleSize.height - 20);
         this.state.paddle = paddle;
 
-        // Chargement des brique
         this.loadBricks(this.levels.data[this.currentLevel]);
-
     }
-
     // Création des briques
     loadBricks(levelArray) {
+        console.log(levelArray)
 
-    // ✅ sécurité : si le niveau n'existe pas
+    // sécurité : si le niveau n'existe pas
     if (!levelArray || !Array.isArray(levelArray)) {
         console.error("❌ Niveau invalide :", levelArray);
         console.warn("⚠️ Retour au niveau 1");
@@ -576,7 +515,7 @@ class Game
                 // Gestion du score et des bonus (accessible même en mode Mega)
                 if (theBrick.strength === 0) {
                     this.state.score += theBrick.type * 100; // Ajout du score
-                    this.state.currentScore += theBrick.type *100
+                    this.state.currentScore += theBrick.type * 100
                     
                     if (theBrick.bonus) {
                         const ballDiamater = this.config.ball.radius * 2
@@ -633,26 +572,6 @@ class Game
                         // ... (Correction 0 et 180 existante)
                     }
                     break;
-
-                        // si pas de bonus
-                        let alteration = 0;
-                        if(this.state.userInput.paddleRight){
-                            alteration = -1 * this.config.ball.angleAlteration;
-                        }
-                        else if(this.state.userInput.paddelLeft){
-                            alteration = this.config.ball.angleAlteration;
-                        }
-                        theBall.reverseOrientationY(alteration);
-
-                         // Correction pour un résultat de 0 et 180 pour éviter
-                        if(theBall.orientation === 0){
-                            theBall.orientation = 10;
-                        }
-                        else if(theBall.orientation === 180){
-                            theBall.orientation = 170
-                        }
-                        break;
-
                     default:
                         break;
                 }
@@ -703,53 +622,31 @@ class Game
     }
 
     // Cycle de vie: 3 - Mise a jours des données des GameObject
-    updateObjects(){
-
-        // Calcul du temps écoulé (approximatif pour 60fps : 16.6ms, ou calculé via stamp)
-        const deltaTime = 1000 / 60; 
-
+    updateObjects() {
+        const deltaTime = 1000 / 60;
         const paddle = this.state.paddle;
 
-        // 1. Gestion de la fin du bonus Sticky si pas de contact
         if (paddle.isSticky) {
             paddle.stickyTimer -= deltaTime;
-            if (paddle.stickyTimer <= 0) {
-                paddle.isSticky = false;
-                paddle.stickyTimer = 0;
-            }
+            if (paddle.stickyTimer <= 0) paddle.isSticky = false;
         }
 
-        // 2. Gestion du relâchement automatique
-        // On vérifie si au moins une balle est collée
         const hasStuckBall = this.state.balls.some(b => b.isStuck);
         if (hasStuckBall) {
             paddle.autoReleaseTimer -= deltaTime;
-            if (paddle.autoReleaseTimer <= 0) {
-                this.releaseStickyBalls();
-                paddle.autoReleaseTimer = 0;
-            }
+            if (paddle.autoReleaseTimer <= 0) this.releaseStickyBalls();
         }
 
-        // Balles 
-        this.state.balls.forEach( theBall => {
+        this.state.balls.forEach(theBall => {
             if (theBall.isStuck) {
-                theBall.position.x = this.state.paddle.position.x + theBall.stickyOffsetX
-                // Si la balle est collée, elle suit le paddle
-                theBall.position.x = this.state.paddle.position.x + theBall.stickyOffsetX;
-                // On la place juste au-dessus du paddle
+                theBall.position.x = this.state.paddle.position.x + theBall.stickOffsetx;
                 theBall.position.y = this.state.paddle.position.y - theBall.size.height;
             } else {
-                // Sinon elle bouge normalement
                 theBall.update();
             }
-        })
-    
+        });
 
-        // Briques 
-        // on ne conserves dans le state que les briques dont strength est different de 0 
-        this.state.bricks = this.state.bricks.filter(theBrick => theBrick.strength !== 0 );
-
-        // Paddle 
+        this.state.bricks = this.state.bricks.filter(theBrick => theBrick.strength !== 0);
         this.state.paddle.updateKeyframe();
     }
 
@@ -802,22 +699,19 @@ class Game
         this.updateObjects();
 
         // Cycle 4
-        this.renderObject();
+        this.renderObject();        
 
-         
-        
-
-        //S'il n'y a aucune balle dans saveBalls, on a perd une vie
         if (this.state.balls.length <= 0) {
             if (this.state.playerMode === 'Duo') {
-            this.state.hp--; // Le joueur actuel perd une vie
-            this.updateHeader();
+                this.state.hp--;
+                this.updateHeader();
+                
                 if (this.state.hp > 0) {
                     this.switchPlayer();
+                    // On relance la boucle APRES le switch
                     requestAnimationFrame(this.loop.bind(this));
-                    return;
+                    return; 
                 } else {
-                    // Joueur éliminé, on vérifie si l'autre peut encore jouer
                     const otherId = (this.state.currentPlayer === 1) ? 2 : 1;
                     if (this.players[otherId].hp > 0) {
                         this.switchPlayer();
@@ -829,7 +723,6 @@ class Game
                     }
                 }
             }
-
             if(this.state.playerMode === 'Solo'){
                 this.state.hp --;
                 this.state.stickyMode = false;
@@ -932,7 +825,7 @@ class Game
         if (type === 'stickyBall') {
             this.state.paddle.isSticky = true;
             // On donne 10 secondes de "vie" au bonus
-            this.state.paddle.stickyTimer = 10000; 
+            this.state.paddle.stickyTimer = 5000; 
         }
 
     }
@@ -1027,6 +920,8 @@ class Game
         const prefix = this.state.playerMode === 'Duo' ? `J${this.state.currentPlayer} - ` : '';
         
         if (this.uiScore) this.uiScore.textContent = `${prefix}Score: ${this.state.score}`;
+        console.log(this.state.score);
+        
         if (this.uiHp) this.uiHp.textContent = `${prefix}Vies: ${this.state.hp}`;
         if (this.uiLevel) this.uiLevel.textContent = `Niveau: ${this.state.level}`;
     }
@@ -1034,7 +929,7 @@ class Game
     switchPlayer() {
         if (this.state.playerMode !== 'Duo') return;
 
-        // 1. On soustrait les points accumulés durant cette tentative
+         // 1. On soustrait les points accumulés durant cette tentative
         // pour que le joueur recommence à son score initial au prochain tour.
         this.state.score -= this.state.currentScore;
 
@@ -1048,29 +943,31 @@ class Game
             currentLevel: this.currentLevel
         };
 
-        // 3. Bascule vers l'autre joueur (1 -> 2 ou 2 -> 1)
         this.state.currentPlayer = (this.state.currentPlayer === 1) ? 2 : 1;
 
-        // 4. Chargement des données du nouveau joueur
         const nextPlayer = this.players[this.state.currentPlayer];
         this.state.score = nextPlayer.score;
-        this.state.currentScore = nextPlayer.currentScore;
+        this.state.currentScore = 0;
         this.state.hp = nextPlayer.hp;
         this.state.level = nextPlayer.level;
         this.currentLevel = nextPlayer.level - 1;
 
-        // 5. Réinitialisation du plateau de jeu pour le nouveau joueur
         this.state.balls = [];
         this.state.bricks = [];
         this.state.bonus = [];
         this.state.bouncingEdge = [];
         
         this.initGameObject();
+
+        if (this.state.balls.length > 0) {
+            const ball = this.state.balls[0];
+            ball.isStuck = true;
+            ball.stickOffsetx = (this.state.paddle.size.width / 2) - (ball.size.width / 2);
+        }
+
         this.updateHeader();
-        
         alert(`Au tour du Joueur ${this.state.currentPlayer} !`);
     }
-
     resetGameState() {
         this.ctx.clearRect(
                 0,
@@ -1090,10 +987,6 @@ class Game
         this.updateHeader();
         this.initGameObject(); // Prépare les objets sans lancer la boucle
     }
-
-    // Dans src/Game/Game.js
-
-    // Dans src/Game/Game.js
 
     releaseStickyBalls() {
         let released = false;
