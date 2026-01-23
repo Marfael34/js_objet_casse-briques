@@ -153,6 +153,7 @@ class Game
                 <button class="btn duo-btn"> Duo </button>
             </div>
         `;
+        // bounton pour jouer en solo
         elNbPlayer.querySelector('.solo-btn').addEventListener('click', () => {
             this.state.playerMode = 'Solo';
             elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
@@ -160,19 +161,18 @@ class Game
             elStartModal.classList.remove('hidden')
 
         });
-
+        // bounton pour jouer en duo
         elNbPlayer.querySelector('.duo-btn').addEventListener('click', () => {
             this.state.playerMode = 'Duo';
-            elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
+            elModeDisplay2.textContent =  `Mode sélectionné: ${this.state.playerMode}`
             elNbPlayer.classList.add('hidden');
-            elStartModal.classList.remove('hidden');
-            elStartModal.querySelector('#label-select ').classList.add('hidden'); 
-            elStartModal.querySelector('#level-select').classList.add('hidden')
+            elStartModalDuo.classList.remove('hidden');
             this.state.hp = this.players[this.state.currentPlayer].hp;
+            this.state.currentLevel = 0;
             
         });
 
-        // Modale start/home
+        // Modale start/home solo
         const maxLevels = this.levels.data.length;
         const elStartModal = document.createElement('div');
         elStartModal.setAttribute('id', 'modale-start');
@@ -220,6 +220,33 @@ class Game
             elNbPlayer.classList.remove('hidden');
         })
 
+        // Modale start/home duo
+        const elStartModalDuo = document.createElement('div');
+        elStartModalDuo.setAttribute('id', 'modale-start');
+        elStartModalDuo.classList.add('hidden');
+        elStartModalDuo.classList.add('modal-overlay');
+        elStartModalDuo.innerHTML = `
+            <div class="modal">
+                <h2> Bienvenue sur Arkanoïd </h2>
+                <p id="display-player-mode""></p>
+                <button id="btn-play-duo" class="btn btn-play">Jouer</button>
+                <button id="btn-nbplayer-duo" class="btn btn-nbplayer">Nb joueur</button>
+            </div>
+        `;
+        const elModeDisplay2 = elStartModalDuo.querySelector('#display-player-mode');
+        elStartModalDuo.querySelector('#btn-play-duo').addEventListener('click', () => {  
+            this.state.level = 1;
+            this.initGameObject();
+            this.updateHeader();
+
+            elStartModalDuo.classList.add('hidden')
+            requestAnimationFrame(this.loop.bind(this));
+        });
+        elStartModalDuo.querySelector('#btn-nbplayer-duo').addEventListener('click', () => {
+            elStartModalDuo.classList.add('hidden');
+            elNbPlayer.classList.remove('hidden');
+        })
+
         // Modale lose
         const elLoseModal = document.createElement('div');
         elLoseModal.setAttribute('id', 'modale-lose');
@@ -260,7 +287,7 @@ class Game
         });
         
 
-        document.body.append( elNbPlayer, elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
+        document.body.append( elNbPlayer,elStartModalDuo, elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
@@ -589,7 +616,7 @@ class Game
                             // On déclenche le compte à rebours de relâchement (5s)
                             this.state.paddle.autoReleaseTimer = 5000;
 
-                            
+
                         }
                     
                     if (!theBall.isStuck) {
