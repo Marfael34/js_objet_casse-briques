@@ -93,40 +93,6 @@ span {
     box-shadow: 0 0 30px #00d4ff;
     color: #00d4ff;
 }
-/* [Fichier : src/assets/css/style.css] */
-
-/* Style de la liste déroulante (Select) */
-.level-select {
-    display: block;
-    width: 80%;
-    margin: 20px auto;
-    padding: 12px;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 14px;
-    background-color: #050505; /* Fond noir comme le body */
-    color: #ffff00; /* Texte jaune rétro */
-    border: 3px solid #00d4ff; /* Bordure bleue électrique */
-    box-shadow: 0 0 10px #00d4ff;
-    cursor: pointer;
-    outline: none;
-    text-align: center;
-    appearance: none; /* Supprime le style natif du navigateur */
-    -webkit-appearance: none;
-}
-
-/* Style des options à l'intérieur de la liste */
-.level-select option {
-    background-color: #1a1a1a;
-    color: #00ff41; /* Vert terminal pour les options */
-    font-family: 'Press Start 2P', cursive;
-}
-
-/* Effet au survol du select */
-.level-select:hover {
-    border-color: #ff00ff; /* Change en rose néon au survol */
-    box-shadow: 0 0 15px #ff00ff;
-    color: #ffffff;
-}
 
 /* On ajuste la taille de la modale pour la grille */
 #modale-start .modal {
@@ -141,6 +107,17 @@ span {
 }
 
 #modale-start .btn-play:hover {
+    background-color: #ffffff;
+    box-shadow: 4px 4px 0px #cccccc;
+}
+
+#modale-start .btn-nbplayer {
+    background-color: #f6ff00;
+    color: #000;
+    box-shadow: 4px 4px 0px #f6cc00;
+}
+
+#modale-start .btn-nbplayer:hover {
     background-color: #ffffff;
     box-shadow: 4px 4px 0px #cccccc;
 }
@@ -188,4 +165,81 @@ span {
 #modale-win .next-btn:hover {
     background-color: #ffff00;
     box-shadow: 4px 4px 0px #888800;
+}
+
+/* --- 4. Modale Choix Joueurs (Style Violet Néon) --- */
+#modale-nbplayer .modal {
+    border-color: #f6ff00; /* Rose/Violet Néon */
+    box-shadow: 0 0 30px #f6ff00;
+    color: #f6ff00;
+}
+
+#modale-nbplayer h2 {
+    color: #ff00ff;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+#modale-nbplayer p {
+    color: #ffffff;
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+#modale-nbplayer .button-group {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+/* Bouton Solo */
+#modale-nbplayer .solo-btn {
+    background-color: #ff00ff;
+    color: #000;
+    box-shadow: 4px 4px 0px #880088;
+}
+
+/* Bouton Duo */
+#modale-nbplayer .duo-btn {
+    background-color: #00d4ff; /* Bleu électrique pour contraster */
+    color: #000;
+    box-shadow: 4px 4px 0px #0088aa;
+}
+
+#modale-nbplayer .btn:hover {
+    filter: brightness(1.2);
+    transform: scale(1.05);
+}
+
+/* Style de la liste déroulante (Select) */
+.level-select {
+    display: block;
+    width: 80%;
+    margin: 20px auto;
+    padding: 12px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    background-color: #050505; /* Fond noir comme le body */
+    color: #ffff00; /* Texte jaune rétro */
+    border: 3px solid #00d4ff; /* Bordure bleue électrique */
+    box-shadow: 0 0 10px #00d4ff;
+    cursor: pointer;
+    outline: none;
+    text-align: center;
+    appearance: none; /* Supprime le style natif du navigateur */
+    -webkit-appearance: none;
+}
+
+/* Style des options à l'intérieur de la liste */
+.level-select option {
+    background-color: #1a1a1a;
+    color: #00ff41; /* Vert terminal pour les options */
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Effet au survol du select */
+.level-select:hover {
+    border-color: #ff00ff; /* Change en rose néon au survol */
+    box-shadow: 0 0 15px #ff00ff;
+    color: #ffffff;
 }

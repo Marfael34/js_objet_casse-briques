@@ -9,6 +9,8 @@ export default class Paddle extends MovingObject
     animationIndex = 0;
     previousKeyFrameStamps;
     frameRate = 1;
+    stickyTimer = 0;        // Temps restant pour le bonus global
+    autoReleaseTimer = 0; // Temps restant avant le relâchement automatique
 
     draw(){       
             const sourceY = this.animationIndex * this.size.height;
