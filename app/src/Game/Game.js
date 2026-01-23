@@ -100,13 +100,14 @@ class Game
         level:1,
         currentPlayer: 1,
         playerMode: null,
-        
     };
 
     constructor(customConfig = {}, levelsConfig = [] ){
         Object.assign(this.config, customConfig);
         this.levels = levelsConfig;
         this.currentLevel= 0;
+        this.stickyTimeout = null;
+        this.releaseTimeout = null;
 
     }
 
@@ -165,6 +166,8 @@ class Game
             elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
             elNbPlayer.classList.add('hidden');
             elStartModal.classList.remove('hidden');
+            elStartModal.querySelector('#label-select ').classList.add('hidden'); 
+            elStartModal.querySelector('#level-select').classList.add('hidden')
             this.state.hp = this.players[this.state.currentPlayer].hp;
             
         });
@@ -179,7 +182,7 @@ class Game
             <div class="modal">
                 <h2> Bienvenue sur Arkanoïd </h2>
                 <p id="display-player-mode""></p>
-                <label for="level-select">Choisir un niveau :</label>
+                <label id="label-select" for="level-select">Choisir un niveau :</label>
                 <select id="level-select" class="level-select">
                     ${Array.from({ length: maxLevels }, (_, i) =>
                         `<option value="${i+1}">Niveau ${i + 1}</option>`
@@ -188,7 +191,7 @@ class Game
                 <button class="btn btn-play">Jouer</button>
                 <button class="btn btn-nbplayer">Nb joueur</button>
             </div>
-        `;
+        `;      
         const elModeDisplay = elStartModal.querySelector('#display-player-mode'); // Référence au texte
         // ecouteure de click 
         elStartModal.querySelector('.btn-play').addEventListener('click', () => {  
@@ -576,19 +579,20 @@ class Game
 
                     case CollisionType.VERTICAL:
 
-                    // Si le paddle a le bonus, on colle la balle
-                       if (this.state.paddle.isSticky && !theBall.isStuck) {
-                        theBall.isStuck = true;
-                        
-                        // On calcule l'offset pour que la balle reste collée exactement où elle a tapé
-                        theBall.stickOffsetx = theBall.position.x - this.state.paddle.position.x;
-                        
-                        // On positionne la balle parfaitement sur le paddle pour éviter le clipping
-                        theBall.position.y = this.state.paddle.position.y - theBall.size.height;
-                        
-                        // On ne fait PAS de reverseOrientationY ici, la balle s'arrête
-                    } 
-                    else if (!theBall.isStuck) {
+                        if (this.state.paddle.isSticky && !theBall.isStuck) {
+                            theBall.isStuck = true;
+
+                            theBall.stickOffsetx = theBall.position.x - this.state.paddle.position.x;
+
+                            theBall.position.y = this.state.paddle.position.y - theBall.size.height;
+                            
+                            // On déclenche le compte à rebours de relâchement (5s)
+                            this.state.paddle.autoReleaseTimer = 5000;
+
+                            
+                        }
+                    
+                    if (!theBall.isStuck) {
                         
                         // Comportement standard (Code existant)
                         let alteration = 0;
@@ -673,6 +677,32 @@ class Game
 
     // Cycle de vie: 3 - Mise a jours des données des GameObject
     updateObjects(){
+
+        // Calcul du temps écoulé (approximatif pour 60fps : 16.6ms, ou calculé via stamp)
+        const deltaTime = 1000 / 60; 
+
+        const paddle = this.state.paddle;
+
+        // 1. Gestion de la fin du bonus Sticky si pas de contact
+        if (paddle.isSticky) {
+            paddle.stickyTimer -= deltaTime;
+            if (paddle.stickyTimer <= 0) {
+                paddle.isSticky = false;
+                paddle.stickyTimer = 0;
+            }
+        }
+
+        // 2. Gestion du relâchement automatique
+        // On vérifie si au moins une balle est collée
+        const hasStuckBall = this.state.balls.some(b => b.isStuck);
+        if (hasStuckBall) {
+            paddle.autoReleaseTimer -= deltaTime;
+            if (paddle.autoReleaseTimer <= 0) {
+                this.releaseStickyBalls();
+                paddle.autoReleaseTimer = 0;
+            }
+        }
+
         // Balles 
         this.state.balls.forEach( theBall => {
             if (theBall.isStuck) {
@@ -874,15 +904,10 @@ class Game
 
         if (type === 'stickyBall') {
             this.state.paddle.isSticky = true;
-            
-
-            // Optionnel : Désactivation après 15 secondes
-            setTimeout(() => {
-                this.state.paddle.isSticky = false;
-                // Si des balles étaient collées, on les relâche automatiquement
-                this.releaseStickyBalls();
-            }, 15000);
+            // On donne 10 secondes de "vie" au bonus
+            this.state.paddle.stickyTimer = 10000; 
         }
+
     }
 
     // Gestionnaire d'évènement DOM
@@ -951,6 +976,13 @@ class Game
         this.state.score -= this.state.currentScore;
         this.state.currentScore = 0;
         this.currentLevel = this.state.level -1; // Index du tableau de niveaux
+
+        if (this.state.playerMode === 'Duo') {
+            this.state.currentPlayer = 1; // On remet le tour au joueur 1
+            
+            this.players[1] = { score: 0, hp: 3, currentScore: 0 };
+            this.players[2] = { score: 0, hp: 3, currentScore: 0 };
+        }
     
         this.updateHeader(); // Rafraîchit l'UI
 
@@ -975,37 +1007,42 @@ class Game
     switchPlayer() {
         if (this.state.playerMode !== 'Duo') return;
 
-            // 1. Sauvegarde des données du joueur qui vient de finir son tour
-            this.players[this.state.currentPlayer] = {
-                score: this.state.score,
-                currentScore: this.state.currentScore,
-                hp: this.state.hp, // Utilise les vies restantes du state
-                level: this.state.level,
-                currentLevel: this.currentLevel
-            };
+        // 1. On soustrait les points accumulés durant cette tentative
+        // pour que le joueur recommence à son score initial au prochain tour.
+        this.state.score -= this.state.currentScore;
 
-            // 2. Bascule de l'index du joueur (1 -> 2 ou 2 -> 1)
-            this.state.currentPlayer = (this.state.currentPlayer === 1) ? 2 : 1;
+        // 2. Sauvegarde des données du joueur qui vient de perdre sa balle
+        // On remet le currentScore à 0 pour sa prochaine session.
+        this.players[this.state.currentPlayer] = {
+            score: this.state.score,
+            currentScore: 0, 
+            hp: this.state.hp,
+            level: this.state.level,
+            currentLevel: this.currentLevel
+        };
 
-            // 3. Chargement des données du nouveau joueur
-            const nextPlayer = this.players[this.state.currentPlayer];
-            this.state.score = nextPlayer.score;
-            this.state.currentScore = nextPlayer.currentScore;
-            this.state.hp = nextPlayer.hp;
-            this.state.level = nextPlayer.level;
-            this.currentLevel = nextPlayer.level -1;
+        // 3. Bascule vers l'autre joueur (1 -> 2 ou 2 -> 1)
+        this.state.currentPlayer = (this.state.currentPlayer === 1) ? 2 : 1;
 
-            // 4. Réinitialisation visuelle du plateau
-            this.state.balls = [];
-            this.state.bricks = [];
-            this.state.bonus = [];
-            this.state.bouncingEdge = [];
-            
-            this.initGameObject();
-            this.updateHeader();
-            
-            alert(`Au tour du Joueur ${this.state.currentPlayer} !`);
-        }
+        // 4. Chargement des données du nouveau joueur
+        const nextPlayer = this.players[this.state.currentPlayer];
+        this.state.score = nextPlayer.score;
+        this.state.currentScore = nextPlayer.currentScore;
+        this.state.hp = nextPlayer.hp;
+        this.state.level = nextPlayer.level;
+        this.currentLevel = nextPlayer.level - 1;
+
+        // 5. Réinitialisation du plateau de jeu pour le nouveau joueur
+        this.state.balls = [];
+        this.state.bricks = [];
+        this.state.bonus = [];
+        this.state.bouncingEdge = [];
+        
+        this.initGameObject();
+        this.updateHeader();
+        
+        alert(`Au tour du Joueur ${this.state.currentPlayer} !`);
+    }
 
     resetGameState() {
         this.ctx.clearRect(
@@ -1027,30 +1064,37 @@ class Game
         this.initGameObject(); // Prépare les objets sans lancer la boucle
     }
 
+    // Dans src/Game/Game.js
+
+    // Dans src/Game/Game.js
+
     releaseStickyBalls() {
         let released = false;
         this.state.balls.forEach(ball => {
             if (ball.isStuck) {
                 ball.isStuck = false;
                 
-                // On applique une impulsion verticale
-                // On peut réutiliser la logique d'angle existante basée sur le mouvement du paddle
+                // 1. On donne une petite impulsion vers le haut pour l'éloigner du paddle
+                // On déplace la balle de 10 pixels supplémentaires vers le haut (Y diminue)
+                ball.position.y -= 10;
+
+                // 2. Calcul de l'angle de lancer
                 let alteration = 0;
                 if(this.state.userInput.paddleRight) alteration = -1 * this.config.ball.angleAlteration;
                 else if(this.state.userInput.paddelLeft) alteration = this.config.ball.angleAlteration;
                     
-                // On s'assure que la balle part vers le haut (orientation standard ~45-135 deg)
-                // On force une orientation de base vers le haut avant d'appliquer l'altération
-                ball.orientation = 90; // 90° = vertical vers le haut (selon repère trigo standard inversé canvas ?)
+                // On force l'orientation vers le haut (90°) puis on applique l'inversion/altération
+                ball.orientation = 90;
                 ball.reverseOrientationY(alteration);
                     
                 released = true;
             }
         });
             
-            // Optionnel : Désactiver le sticky après le tir ? 
-            this.state.paddle.isSticky = false; 
+        // Désactiver le mode sticky du paddle une fois les balles relâchées
+        this.state.paddle.isSticky = false;
     }
+
 }
 
 const theGame = new Game(customConfig, levelsConfig);
