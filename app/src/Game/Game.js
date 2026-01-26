@@ -100,14 +100,13 @@ class Game
         level:1,
         currentPlayer: 1,
         playerMode: null,
+        
     };
 
     constructor(customConfig = {}, levelsConfig = [] ){
         Object.assign(this.config, customConfig);
         this.levels = levelsConfig;
         this.currentLevel= 0;
-        this.stickyTimeout = null;
-        this.releaseTimeout = null;
 
     }
 
@@ -159,16 +158,19 @@ class Game
             elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
             elNbPlayer.classList.add('hidden');
             elStartModal.classList.remove('hidden')
+            elStartModal.querySelector('#level-select').classList.remove('hidden')
 
         });
         // bounton pour jouer en duo
         elNbPlayer.querySelector('.duo-btn').addEventListener('click', () => {
             this.state.playerMode = 'Duo';
-            elModeDisplay2.textContent =  `Mode sélectionné: ${this.state.playerMode}`
+            elModeDisplay.textContent =  `Mode sélectionné: ${this.state.playerMode}`
             elNbPlayer.classList.add('hidden');
-            elStartModalDuo.classList.remove('hidden');
+            elStartModal.classList.remove('hidden');
+            elStartModal.querySelector('#level-select').classList.add('hidden')
             this.state.hp = this.players[this.state.currentPlayer].hp;
             this.state.currentLevel = 0;
+            this.state.level = 1;
             
         });
 
@@ -182,7 +184,7 @@ class Game
             <div class="modal">
                 <h2> Bienvenue sur Arkanoïd </h2>
                 <p id="display-player-mode""></p>
-                <label id="label-select" for="level-select">Choisir un niveau :</label>
+                <label for="level-select">Choisir un niveau :</label>
                 <select id="level-select" class="level-select">
                     ${Array.from({ length: maxLevels }, (_, i) =>
                         `<option value="${i+1}">Niveau ${i + 1}</option>`
@@ -191,7 +193,7 @@ class Game
                 <button class="btn btn-play">Jouer</button>
                 <button class="btn btn-nbplayer">Nb joueur</button>
             </div>
-        `;      
+        `;
         const elModeDisplay = elStartModal.querySelector('#display-player-mode'); // Référence au texte
         // ecouteure de click 
         elStartModal.querySelector('.btn-play').addEventListener('click', () => {  
@@ -202,6 +204,11 @@ class Game
             // Mise à jour du niveau
             this.state.level = safeLevel;
             this.currentLevel = safeLevel - 1;
+
+            if(this.state.playerMode === 'Duo'){
+                 this.state.level = 1;
+                this.currentLevel = 0;
+            }
    
             // Réinitialisation des objets pour le niveau choisi
             this.state.balls = [];
@@ -217,33 +224,6 @@ class Game
         });
         elStartModal.querySelector('.btn-nbplayer').addEventListener('click', () => {
             elStartModal.classList.add('hidden');
-            elNbPlayer.classList.remove('hidden');
-        })
-
-        // Modale start/home duo
-        const elStartModalDuo = document.createElement('div');
-        elStartModalDuo.setAttribute('id', 'modale-start');
-        elStartModalDuo.classList.add('hidden');
-        elStartModalDuo.classList.add('modal-overlay');
-        elStartModalDuo.innerHTML = `
-            <div class="modal">
-                <h2> Bienvenue sur Arkanoïd </h2>
-                <p id="display-player-mode""></p>
-                <button id="btn-play-duo" class="btn btn-play">Jouer</button>
-                <button id="btn-nbplayer-duo" class="btn btn-nbplayer">Nb joueur</button>
-            </div>
-        `;
-        const elModeDisplay2 = elStartModalDuo.querySelector('#display-player-mode');
-        elStartModalDuo.querySelector('#btn-play-duo').addEventListener('click', () => {  
-            this.state.level = 1;
-            this.initGameObject();
-            this.updateHeader();
-
-            elStartModalDuo.classList.add('hidden')
-            requestAnimationFrame(this.loop.bind(this));
-        });
-        elStartModalDuo.querySelector('#btn-nbplayer-duo').addEventListener('click', () => {
-            elStartModalDuo.classList.add('hidden');
             elNbPlayer.classList.remove('hidden');
         })
 
@@ -287,7 +267,7 @@ class Game
         });
         
 
-        document.body.append( elNbPlayer,elStartModalDuo, elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
+        document.body.append( elNbPlayer, elStartModal ,elH1,elHeader, elCanvas, elLoseModal, elWinModal);
 
         // on récupération du context de dessin 
         this.ctx = elCanvas.getContext("2d");
@@ -333,101 +313,39 @@ class Game
     }
 
     //Mise en place des objet du jeux sur la scène
-    initGameObject(){
-        // Balle 
-        const ballDiamater = this.config.ball.radius * 2
-        const ball = new Ball(
-            this.images.ball,
-            ballDiamater, ballDiamater, 
-            this.config.ball.orientation, 
-            this.config.ball.speed
-        );
-
-        ball.setPosition(
-            this.config.ball.position.x, 
-            this.config.ball.position.y
-        );
-
+    initGameObject() {
+        const ballDiamater = this.config.ball.radius * 2;
+        const ball = new Ball(this.images.ball, ballDiamater, ballDiamater, this.config.ball.orientation, this.config.ball.speed);
+        ball.setPosition(this.config.ball.position.x, this.config.ball.position.y);
         ball.isCircular = true;
         this.state.balls.push(ball);
 
-        // Bordure de la mort 
-        const deathEdge = new GameObject(
-            this.images.edge, 
-            this.config.canvasSize.width, 
-            20
-        );
-        deathEdge.setPosition( 
-            0, 
-            this.config.canvasSize.height + 30 
-        );
+        const deathEdge = new GameObject(this.images.edge, this.config.canvasSize.width, 20);
+        deathEdge.setPosition(0, this.config.canvasSize.height + 30);
         this.state.deathEdge = deathEdge;
 
-        // -- Bordure a rebond
-        // Haut
-        const edgeTop = new GameObject(
-            this.images.edge, 
-            this.config.canvasSize.width, 
-            20
-        );
-        edgeTop.setPosition(
-            0, 
-            0
-        );
-        // Droite
-        const edgeRight = new GameObject(
-            this.images.edge, 
-            20, 
-            this.config.canvasSize.height + 10
-        );
-        edgeRight.setPosition(
-            this.config.canvasSize.width - 20, 
-            20
-        );
+        const edgeTop = new GameObject(this.images.edge, this.config.canvasSize.width, 20);
+        edgeTop.setPosition(0, 0);
+        const edgeRight = new GameObject(this.images.edge, 20, this.config.canvasSize.height + 10);
+        edgeRight.setPosition(this.config.canvasSize.width - 20, 20);
         edgeRight.tag = "RightEdge";
-        
-        // Gauche
-        const edgeLeft = new GameObject(
-            this.images.edge, 
-            20, 
-            this.config.canvasSize.height + 10
-        );
-        edgeLeft.setPosition(
-            0, 
-            20
-        );
+        const edgeLeft = new GameObject(this.images.edge, 20, this.config.canvasSize.height + 10);
+        edgeLeft.setPosition(0, 20);
         edgeLeft.tag = "LeftEdge";
 
-        // Ajout dans la liste des bords
-        this.state.bouncingEdge.push(
-            edgeTop, 
-            edgeRight, 
-            edgeLeft
-        );
+        this.state.bouncingEdge = [edgeTop, edgeRight, edgeLeft];
 
-        //Paddle
-        const paddle = new Paddle(
-            this.images.paddle, 
-            this.config.paddleSize.width, 
-            this.config.paddleSize.height, 
-            0, 
-            0
-        );
-        paddle.setPosition(
-           (this.config.canvasSize.width / 2) - (this.config.paddleSize.width /2), 
-            this.config.canvasSize.height - this.config.paddleSize.height - 20
-        );
+        const paddle = new Paddle(this.images.paddle, this.config.paddleSize.width, this.config.paddleSize.height, 0, 0);
+        paddle.setPosition((this.config.canvasSize.width / 2) - (this.config.paddleSize.width / 2), this.config.canvasSize.height - this.config.paddleSize.height - 20);
         this.state.paddle = paddle;
 
-        // Chargement des brique
         this.loadBricks(this.levels.data[this.currentLevel]);
-
     }
-
     // Création des briques
     loadBricks(levelArray) {
+        console.log(levelArray)
 
-    // ✅ sécurité : si le niveau n'existe pas
+    // sécurité : si le niveau n'existe pas
     if (!levelArray || !Array.isArray(levelArray)) {
         console.error("❌ Niveau invalide :", levelArray);
         console.warn("⚠️ Retour au niveau 1");
@@ -576,7 +494,7 @@ class Game
                 // Gestion du score et des bonus (accessible même en mode Mega)
                 if (theBrick.strength === 0) {
                     this.state.score += theBrick.type * 100; // Ajout du score
-                    this.state.currentScore += theBrick.type *100
+                    this.state.currentScore += theBrick.type * 100
                     
                     if (theBrick.bonus) {
                         const ballDiamater = this.config.ball.radius * 2
@@ -616,7 +534,7 @@ class Game
                             // On déclenche le compte à rebours de relâchement (5s)
                             this.state.paddle.autoReleaseTimer = 5000;
 
-
+                            
                         }
                     
                     if (!theBall.isStuck) {
@@ -633,26 +551,6 @@ class Game
                         // ... (Correction 0 et 180 existante)
                     }
                     break;
-
-                        // si pas de bonus
-                        let alteration = 0;
-                        if(this.state.userInput.paddleRight){
-                            alteration = -1 * this.config.ball.angleAlteration;
-                        }
-                        else if(this.state.userInput.paddelLeft){
-                            alteration = this.config.ball.angleAlteration;
-                        }
-                        theBall.reverseOrientationY(alteration);
-
-                         // Correction pour un résultat de 0 et 180 pour éviter
-                        if(theBall.orientation === 0){
-                            theBall.orientation = 10;
-                        }
-                        else if(theBall.orientation === 180){
-                            theBall.orientation = 170
-                        }
-                        break;
-
                     default:
                         break;
                 }
@@ -733,23 +631,14 @@ class Game
         // Balles 
         this.state.balls.forEach( theBall => {
             if (theBall.isStuck) {
-                theBall.position.x = this.state.paddle.position.x + theBall.stickyOffsetX
-                // Si la balle est collée, elle suit le paddle
-                theBall.position.x = this.state.paddle.position.x + theBall.stickyOffsetX;
-                // On la place juste au-dessus du paddle
+                theBall.position.x = this.state.paddle.position.x + theBall.stickOffsetx;
                 theBall.position.y = this.state.paddle.position.y - theBall.size.height;
             } else {
-                // Sinon elle bouge normalement
                 theBall.update();
             }
-        })
-    
+        });
 
-        // Briques 
-        // on ne conserves dans le state que les briques dont strength est different de 0 
-        this.state.bricks = this.state.bricks.filter(theBrick => theBrick.strength !== 0 );
-
-        // Paddle 
+        this.state.bricks = this.state.bricks.filter(theBrick => theBrick.strength !== 0);
         this.state.paddle.updateKeyframe();
     }
 
@@ -802,22 +691,19 @@ class Game
         this.updateObjects();
 
         // Cycle 4
-        this.renderObject();
+        this.renderObject();        
 
-         
-        
-
-        //S'il n'y a aucune balle dans saveBalls, on a perd une vie
         if (this.state.balls.length <= 0) {
             if (this.state.playerMode === 'Duo') {
-            this.state.hp--; // Le joueur actuel perd une vie
-            this.updateHeader();
+                this.state.hp--;
+                this.updateHeader();
+                
                 if (this.state.hp > 0) {
                     this.switchPlayer();
+                    // On relance la boucle APRES le switch
                     requestAnimationFrame(this.loop.bind(this));
-                    return;
+                    return; 
                 } else {
-                    // Joueur éliminé, on vérifie si l'autre peut encore jouer
                     const otherId = (this.state.currentPlayer === 1) ? 2 : 1;
                     if (this.players[otherId].hp > 0) {
                         this.switchPlayer();
@@ -829,7 +715,6 @@ class Game
                     }
                 }
             }
-
             if(this.state.playerMode === 'Solo'){
                 this.state.hp --;
                 this.state.stickyMode = false;
@@ -1004,11 +889,13 @@ class Game
         this.state.currentScore = 0;
         this.currentLevel = this.state.level -1; // Index du tableau de niveaux
 
-        if (this.state.playerMode === 'Duo') {
-            this.state.currentPlayer = 1; // On remet le tour au joueur 1
-            
-            this.players[1] = { score: 0, hp: 3, currentScore: 0 };
-            this.players[2] = { score: 0, hp: 3, currentScore: 0 };
+        if(this.state.playerMode === 'Duo'){
+            this.players[1].hp = 3;
+            this.players[2].hp =3
+            this.state.score -= this.state.currentScore;
+            this.state.currentScore = 0;
+            this.currentLevel = 0;
+            this.state.level = 1;
         }
     
         this.updateHeader(); // Rafraîchit l'UI
@@ -1026,7 +913,8 @@ class Game
     updateHeader() {
         const prefix = this.state.playerMode === 'Duo' ? `J${this.state.currentPlayer} - ` : '';
         
-        if (this.uiScore) this.uiScore.textContent = `${prefix}Score: ${this.state.score}`;
+        if (this.uiScore) this.uiScore.textContent = `${prefix}Score: ${this.state.score}`;     
+        
         if (this.uiHp) this.uiHp.textContent = `${prefix}Vies: ${this.state.hp}`;
         if (this.uiLevel) this.uiLevel.textContent = `Niveau: ${this.state.level}`;
     }
@@ -1036,7 +924,11 @@ class Game
 
         // 1. On soustrait les points accumulés durant cette tentative
         // pour que le joueur recommence à son score initial au prochain tour.
+        console.log(`switchplayer avant la remise a zero${this.state.currentScore}`)
         this.state.score -= this.state.currentScore;
+        this.state.currentScore = 0
+        console.log(`switchplayer après la remise a zero${this.state.currentScore}`);
+        
 
         // 2. Sauvegarde des données du joueur qui vient de perdre sa balle
         // On remet le currentScore à 0 pour sa prochaine session.
@@ -1055,6 +947,7 @@ class Game
         const nextPlayer = this.players[this.state.currentPlayer];
         this.state.score = nextPlayer.score;
         this.state.currentScore = nextPlayer.currentScore;
+        console.log(this.state.score);
         this.state.hp = nextPlayer.hp;
         this.state.level = nextPlayer.level;
         this.currentLevel = nextPlayer.level - 1;
@@ -1087,13 +980,17 @@ class Game
         this.state.bricks = [];
         this.state.bouncingEdge = [];
         this.state.bonus = [];
+
+        if(this.state.playerMode === 'Duo'){
+            this.state.score -= this.state.currentScore;
+            this.state.currentScore = 0;
+            this.currentLevel = 0;
+            this.state.level = 1;
+        }
+        
         this.updateHeader();
         this.initGameObject(); // Prépare les objets sans lancer la boucle
     }
-
-    // Dans src/Game/Game.js
-
-    // Dans src/Game/Game.js
 
     releaseStickyBalls() {
         let released = false;
@@ -1101,27 +998,24 @@ class Game
             if (ball.isStuck) {
                 ball.isStuck = false;
                 
-                // 1. On donne une petite impulsion vers le haut pour l'éloigner du paddle
-                // On déplace la balle de 10 pixels supplémentaires vers le haut (Y diminue)
-                ball.position.y -= 10;
-
-                // 2. Calcul de l'angle de lancer
+                // On applique une impulsion verticale
+                // On peut réutiliser la logique d'angle existante basée sur le mouvement du paddle
                 let alteration = 0;
                 if(this.state.userInput.paddleRight) alteration = -1 * this.config.ball.angleAlteration;
                 else if(this.state.userInput.paddelLeft) alteration = this.config.ball.angleAlteration;
                     
-                // On force l'orientation vers le haut (90°) puis on applique l'inversion/altération
-                ball.orientation = 90;
+                // On s'assure que la balle part vers le haut (orientation standard ~45-135 deg)
+                // On force une orientation de base vers le haut avant d'appliquer l'altération
+                ball.orientation = 90; // 90° = vertical vers le haut (selon repère trigo standard inversé canvas ?)
                 ball.reverseOrientationY(alteration);
                     
                 released = true;
             }
         });
             
-        // Désactiver le mode sticky du paddle une fois les balles relâchées
-        this.state.paddle.isSticky = false;
+            // Optionnel : Désactiver le sticky après le tir ? 
+            this.state.paddle.isSticky = false; 
     }
-
 }
 
 const theGame = new Game(customConfig, levelsConfig);
