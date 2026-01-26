@@ -343,8 +343,6 @@ class Game
     }
     // Création des briques
     loadBricks(levelArray) {
-        console.log(levelArray)
-
     // sécurité : si le niveau n'existe pas
     if (!levelArray || !Array.isArray(levelArray)) {
         console.error("❌ Niveau invalide :", levelArray);
@@ -924,10 +922,8 @@ class Game
 
         // 1. On soustrait les points accumulés durant cette tentative
         // pour que le joueur recommence à son score initial au prochain tour.
-        console.log(`switchplayer avant la remise a zero${this.state.currentScore}`)
         this.state.score -= this.state.currentScore;
-        this.state.currentScore = 0
-        console.log(`switchplayer après la remise a zero${this.state.currentScore}`);
+        this.state.currentScore = 0;
         
 
         // 2. Sauvegarde des données du joueur qui vient de perdre sa balle
@@ -947,7 +943,6 @@ class Game
         const nextPlayer = this.players[this.state.currentPlayer];
         this.state.score = nextPlayer.score;
         this.state.currentScore = nextPlayer.currentScore;
-        console.log(this.state.score);
         this.state.hp = nextPlayer.hp;
         this.state.level = nextPlayer.level;
         this.currentLevel = nextPlayer.level - 1;
